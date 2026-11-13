@@ -46,13 +46,13 @@ jobs:
         run: npm i
 
       - name: Build Website
-        run: npm run web-build # Запускает сборку. Убедитесь, что эта команда собирает именно в web/dist
+        run: npm run build # Запускает сборку. Убедитесь, что эта команда собирает именно в web/dist
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           # Указываем точный путь до вашей папки с готовым билдом
-          path: './web/dist'
+          path: './dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
