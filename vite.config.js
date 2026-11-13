@@ -17,12 +17,12 @@ import htmlMinifier from 'vite-plugin-html-minifier'
 
 // Генерация объекта со всеми страницами проекта в виде { 'имя/страницы': '/полный/путь/к/файлу.html', ... }
 const get_pages = () => {
-    let root_path = "";
+    let root_path = "./app/**/*.html"; // назначаем корневую директорию проекта
 
     var pages = Object.fromEntries(
-        glob.sync("/app/**/*.html", {
+        glob.sync(root_path, {
             ignore: [
-                root_path + "/app/**/cmp/**/*.html", // игнорируем компоненты
+                "./app/**/cmp/**/*.html", // игнорируем компоненты
             ]
         }).map(file => [
             path.relative(
