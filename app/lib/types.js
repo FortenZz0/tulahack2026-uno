@@ -1,7 +1,13 @@
 // поля либо число, либо null
-class Planet {
-    radius;
-    density;
-    vesc;
-    eqt;
+export class Planet {
+    name = null;
+    radius = null;
+    density = null;
+    vesc = null;
+    eqt = null;
+
+    esi = {
+        full: null,
+        simple: null
+    };
 }
