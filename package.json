@@ -1,0 +1,24 @@
+{
+	"name": "vite-starter",
+	"private": false,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build --minify false --mode build",
+		"prod": "vite build --minify true --mode prod",
+		"watch": "vite build --watch",
+		"preview": "vite preview"
+	},
+	"devDependencies": {
+	"glob": "^10.3.3",
+	"sass": "^1.64.1",
+	"vite": "^4.4.5",
+		"vite-plugin-full-reload": "^1.0.5",
+		"vite-plugin-html-minifier": "^1.0.3",
+		"vite-plugin-nunjucks": "^0.1.10"
+	},
+	"dependencies": {
+		"swiper": "^10.1.0"
+	}
+}

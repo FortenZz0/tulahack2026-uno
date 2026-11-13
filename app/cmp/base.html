@@ -1,0 +1,15 @@
+{% import "../set.njk" as data %}
+
+{% include "./header/index.html" %}
+
+
+{% set main_custom_class = "" %}
+
+<main class="{{ main_custom_class }}">
+    {% block main %}
+        
+    {% endblock main %}
+</main>
+
+
+{% include "./footer/index.html" %}
