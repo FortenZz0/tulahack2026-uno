@@ -1,6 +1,7 @@
 // поля либо число, либо null
 export class Planet {
     name = null;
+    mass = null;
     radius = null;
     density = null;
     vesc = null;

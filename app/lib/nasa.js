@@ -66,13 +66,12 @@ export async function fetchPlanets() {
         planet.radius = parsePositiveNumber(item.pl_rade);
         planet.density = parsePositiveNumber(item.pl_dens);
         planet.eqt = parsePositiveNumber(item.pl_eqt);
-
-        const mass = parsePositiveNumber(item.pl_bmasse);
+        planet.mass = parsePositiveNumber(item.pl_bmasse);
 
         // Вторая космическая скорость (км/с)
-        if (mass > 0 && planet.radius > 0) {
+        if (planet.mass > 0 && planet.radius > 0) {
             planet.vesc = 11.186 * Math.sqrt(
-                mass / planet.radius
+                planet.mass / planet.radius
             );
         }
 
