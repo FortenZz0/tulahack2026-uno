@@ -26,7 +26,7 @@ const get_pages = () => {
             ]
         }).map(file => [
             path.relative(
-                root_path,
+                "./app",
                 file.slice(0, file.length - path.extname(file).length)
             ),
             fileURLToPath(new URL(file, import.meta.url))
