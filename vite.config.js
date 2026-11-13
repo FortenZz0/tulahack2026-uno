@@ -16,34 +16,53 @@ import htmlMinifier from 'vite-plugin-html-minifier'
 
 
 // Генерация объекта со всеми страницами проекта в виде { 'имя/страницы': '/полный/путь/к/файлу.html', ... }
-const pages = Object.fromEntries(glob.sync("app/**/*.html").map(file => [
-    path.relative(
-        'app',
-        file.slice(0, file.length - path.extname(file).length)
-    ),
-    fileURLToPath(new URL(file, import.meta.url))
-]))
-console.log(pages)
+const get_pages = () => {
+    let root_path = "";
+
+    var pages = Object.fromEntries(
+        glob.sync("/app/**/*.html", {
+            ignore: [
+                root_path + "/app/**/cmp/**/*.html", // игнорируем компоненты
+            ]
+        }).map(file => [
+            path.relative(
+                root_path,
+                file.slice(0, file.length - path.extname(file).length)
+            ),
+            fileURLToPath(new URL(file, import.meta.url))
+        ]
+    ));
+
+    console.log("detected pages:");
+    console.log(pages);
+    console.log();
+
+    return pages
+}
 
 
 // Фильтры
-const formatMoney = (val) => { // получает int(1234567), возвращает str(1 234 567)
-    let result = ""
-    let v = val.toString()
-    for (let i = 0; i < v.length; i++) {
-        if (i % 3 === 0 && i !== 0)
-            result = `${v[v.length-1 - i]} ` + result
-        else
-            result = v[v.length-1 - i] + result
-    }
+// const formatMoney = (val) => { // полуает int(1234567), возвращает str(1 234 567)
+//     let result = ""
+//     let v = val.toString()
+//     for (let i = 0; i < v.length; i++) {
+//         if (i % 3 === 0 && i !== 0)
+//             result = `${v[v.length-1 - i]} ` + result
+//         else
+//             result = v[v.length-1 - i] + result
+//     }
 
-    return result
-}
+//     return result
+// }
 
 
 export default defineConfig((command) => {
     const global = {
-        root: "app", // назначаем корневую директорию проекта
+        // web root - "./web/app/"
+        // mobile root - "./mobile/app/"
+        root: "./app/", // назначаем корневую директорию проекта
+
+        base: '/tulahack2026-uno/', // публичный базовый путь для корректной работы на GitHub Pages
 
         clearScreen: false, // отключаем очистку консоли при запуске сервера
     }
@@ -52,6 +71,8 @@ export default defineConfig((command) => {
     const server = {
         open: true, // при запуске открываем страницу в браузере
         host: true, // создаём хост для подключения из локальной сети
+        // web port - 8080
+        // mobile port - 8082
         port: 8080,
         strictPort: true,
         watch: {
@@ -63,6 +84,8 @@ export default defineConfig((command) => {
     const preview = {
         open: true, // при запуске открываем страницу в браузере
         host: true, // создаём хост для подключения из локальной сети
+        // web port - 8080
+        // mobile port - 8082
         port: 8081,
     }
 
@@ -74,27 +97,36 @@ export default defineConfig((command) => {
         emptyOutDir: "../dist", // задаём папку, которую перед сборкой нужно очищать
 
         rollupOptions: {
-            input: pages // передаём все страницы проекта для сборщика
+            input: get_pages(command.mode) // передаём все страницы проекта для сборщика
         },
     }
 
     // настройки плагинов
     const plugins = [
         // активация Nunjucks
-        nunjucks.default({
-            nunjucksEnvironment: {
-                filters: {
-                    formatMoney: formatMoney
-                }
-            }
-        }),
+        nunjucks(),
 
-        // автоматическое обновление страницы при изменении любых файлов
-        FullReload(['config/routes.rb', 'app/**/*'], {always: true}),
+        // активация Nunjucks с фильтрами
+        // nunjucks({
+        //     nunjucksEnvironment: {
+        //         filters: {
+        //             formatMoney: formatMoney
+        //         }
+        //     }
+        // }),
 
-        // Минификация html при prod-сборке
+        // автоматическое обновление всего приложения при изменении .njk (теперь любых) файлов
+        FullReload(
+            [
+                'config/routes.rb',
+                "/app/**/*"
+            ],
+            {always: true}
+        ),
+
+        // Минификация html при сборке
         htmlMinifier({
-            minify: command.mode == "prod",
+            minify: true,
         }),
     ]
     
