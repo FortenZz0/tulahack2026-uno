@@ -37,3 +37,10 @@ function caluculateSimpleESI(
 
     return Math.sqrt(r * t);
 }
+
+
+export {
+    calculateESIcomponent,
+    calculateESI,
+    caluculateSimpleESI
+};

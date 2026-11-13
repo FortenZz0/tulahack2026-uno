@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --mode web",
     "build": "vite build --mode web",
-    "preview": "vite preview --mode web"
+    "preview": "vite preview --mode web",
+
+    "lib-test": "node --test app/lib/tests/esi.test.js"
   },
   "devDependencies": {
     "glob": "^13.0.6",
