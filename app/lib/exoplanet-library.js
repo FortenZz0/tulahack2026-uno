@@ -1,4 +1,4 @@
-import { fetchPlanets } from "./nasa.js";
+import { fetchPlanets } from "./api.js";
 import { queryPlanets } from "./planet-query.js";
 
 export class ExoplanetLibrary {
@@ -51,9 +51,9 @@ export class ExoplanetLibrary {
     refresh() {
         if (this.#pendingRefresh) return this.#pendingRefresh;
 
-        const pending = this.#fetchWithRetry().then(planets => {
-            this.#planets = planets;
-            this.#lastUpdated = new Date();
+        const pending = this.#fetchWithRetry().then(data => {
+            this.#planets = data.planets;
+            this.#lastUpdated = data.updatedAt;
         });
         this.#pendingRefresh = pending;
         void pending.then(
