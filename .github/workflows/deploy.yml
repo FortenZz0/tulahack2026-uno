@@ -3,7 +3,7 @@ name: Web Deployment
 on:
   # push:
   pull_request:
-    branches: [ main ] # Скрипт будет срабатывать при каждом пуше в ветку main
+    # branches: [ main ] # Скрипт будет срабатывать при каждом пуше в ветку main
     paths:
       - 'web/app/**' # Скрипт будет срабатывать только при изменениях в папке /web/app
       - 'vite.config.js'
