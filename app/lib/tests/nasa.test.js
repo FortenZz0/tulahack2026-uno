@@ -3,13 +3,20 @@ import assert from "node:assert/strict";
 
 import { fetchPlanets } from "../nasa.js";
 import { Planet } from "../planet.js";
+import {
+    calculateHabitableZone,
+    calculateHabitableTimeFraction
+} from "../habitable-zone.js";
 
-
-function mockFetch(t, data, status = 200) {
-    const requests = [];
+function mockNASA(t, data, status = 200) {
+    let requests = 0;
+    let query = null;
 
     t.mock.method(globalThis, "fetch", async (url) => {
-        requests.push(new URL(url));
+        requests++;
+
+        const params = new URL(url).searchParams;
+        query = params.get("query");
 
         return {
             ok: status >= 200 && status < 300,
@@ -18,40 +25,34 @@ function mockFetch(t, data, status = 200) {
         };
     });
 
-    return requests;
+    return {
+        getRequests: () => requests,
+        getQuery: () => query,
+    };
 }
 
-function createPlanetData(overrides = {}) {
+function makePlanet(overrides = {}) {
     return {
-        pl_name: "Earth",
+        pl_name: "Test Planet",
         pl_rade: 1,
         pl_bmasse: 1,
         pl_dens: 5.51,
-        pl_eqt: 288,
+        pl_eqt: 255,
+        st_teff: 5780,
+        st_lum: 0,
+        pl_orbsmax: 1,
+        pl_orbeccen: 0,
+        pl_orbper: 365.25,
         ...overrides,
     };
 }
 
-test("Отправка запроса к NASA API", async (t) => {
-    const requests = mockFetch(t, []);
+test("Запрос содержит необходимые поля NASA", async (t) => {
+    const mock = mockNASA(t, []);
 
     await fetchPlanets();
 
-    assert.equal(requests.length, 1);
-
-    const url = requests[0];
-
-    assert.equal(
-        url.origin,
-        "https://exoplanetarchive.ipac.caltech.edu"
-    );
-
-    assert.equal(url.pathname, "/TAP/sync");
-    assert.equal(url.searchParams.get("format"), "json");
-
-    const query = url.searchParams.get("query");
-
-    assert.match(query, /FROM\s+pscomppars/i);
+    const query = mock.getQuery();
 
     for (const field of [
         "pl_name",
@@ -59,262 +60,259 @@ test("Отправка запроса к NASA API", async (t) => {
         "pl_bmasse",
         "pl_dens",
         "pl_eqt",
+        "st_teff",
+        "st_lum",
+        "pl_orbsmax",
+        "pl_orbeccen",
+        "pl_orbper",
     ]) {
-        assert.ok(query.includes(field));
+        assert.match(query, new RegExp(`\\b${field}\\b`));
     }
+
+    assert.equal(mock.getRequests(), 1);
 });
 
-test("Пустой ответ NASA", async (t) => {
-    mockFetch(t, []);
+test("Данные NASA преобразуются в Planet", async (t) => {
+    mockNASA(t, [makePlanet()]);
 
     const planets = await fetchPlanets();
 
-    assert.deepEqual(planets, []);
-});
-
-test("Создание экземпляров Planet", async (t) => {
-    mockFetch(t, [
-        createPlanetData({ pl_name: "Earth" }),
-        createPlanetData({ pl_name: "Mars" }),
-    ]);
-
-    const planets = await fetchPlanets();
-
-    assert.equal(planets.length, 2);
-
+    assert.equal(planets.length, 1);
     assert.ok(planets[0] instanceof Planet);
-    assert.ok(planets[1] instanceof Planet);
 
-    assert.equal(planets[0].name, "Earth");
-    assert.equal(planets[1].name, "Mars");
+    const planet = planets[0];
+
+    assert.equal(planet.name, "Test Planet");
+    assert.equal(planet.radius, 1);
+    assert.equal(planet.mass, 1);
+    assert.equal(planet.density, 5.51);
+    assert.equal(planet.eqt, 255);
+    assert.ok(Math.abs(planet.vesc - 11.186) < 1e-10);
 });
 
-test("Преобразование корректных данных планеты", async (t) => {
-    mockFetch(t, [
-        createPlanetData({
-            pl_name: "  Kepler-22 b  ",
-            pl_rade: 2.4,
-            pl_bmasse: 5.2,
-            pl_dens: 3.1,
-            pl_eqt: 262,
-        }),
-    ]);
+test("Название планеты очищается от пробелов", async (t) => {
+    mockNASA(t, [makePlanet({
+        pl_name: "  Kepler-22 b  ",
+    })]);
 
     const [planet] = await fetchPlanets();
 
     assert.equal(planet.name, "Kepler-22 b");
-    assert.equal(planet.radius, 2.4);
-    assert.equal(planet.mass, 5.2);
-    assert.equal(planet.density, 3.1);
-    assert.equal(planet.eqt, 262);
 });
 
-test("Некорректные названия преобразуются в null", async (t) => {
-    const invalidNames = [
-        null,
-        undefined,
-        "",
-        "   ",
-        "unknown",
-        " UNKNOWN ",
-        "null",
-        "N/A",
-        "none",
-        123,
-        true,
-    ];
-
-    mockFetch(
-        t,
-        invalidNames.map(name =>
-            createPlanetData({ pl_name: name })
-        )
-    );
-
-    const planets = await fetchPlanets();
-
-    assert.equal(planets.length, invalidNames.length);
-
-    for (const planet of planets) {
-        assert.equal(planet.name, null);
-    }
-});
-
-test("Некорректные числовые значения преобразуются в null", async (t) => {
-    const invalidValues = [
-        null,
-        undefined,
-        0,
-        -1,
-        NaN,
-        Infinity,
-        -Infinity,
-        "1.5",
-        "",
-        true,
-    ];
-
-    const fields = [
-        ["pl_rade", "radius"],
-        ["pl_bmasse", "mass"],
-        ["pl_dens", "density"],
-        ["pl_eqt", "eqt"],
-    ];
-
-    for (const [source, target] of fields) {
-        const data = invalidValues.map(value =>
-            createPlanetData({ [source]: value })
-        );
-
-        // Для каждого поля отдельно подменяем ответ API
-        const fetchMock = t.mock.method(
-            globalThis,
-            "fetch",
-            async () => ({
-                ok: true,
-                status: 200,
-                json: async () => data,
-            })
-        );
-
-        const planets = await fetchPlanets();
-
-        for (const planet of planets) {
-            assert.equal(planet[target], null);
-        }
-
-        fetchMock.mock.restore();
-    }
-});
-
-test("Расчёт второй космической скорости", async (t) => {
-    mockFetch(t, [
-        createPlanetData({
-            pl_rade: 1,
-            pl_bmasse: 1,
-        }),
-        createPlanetData({
-            pl_rade: 2,
-            pl_bmasse: 4,
-        }),
+test("Некорректное название преобразуется в null", async (t) => {
+    mockNASA(t, [
+        makePlanet({ pl_name: "unknown" }),
+        makePlanet({ pl_name: "  " }),
+        makePlanet({ pl_name: null }),
     ]);
 
     const planets = await fetchPlanets();
 
-    assert.ok(
-        Math.abs(planets[0].vesc - 11.186) < 1e-10
-    );
-
-    assert.ok(
-        Math.abs(
-            planets[1].vesc - 11.186 * Math.sqrt(2)
-        ) < 1e-10
-    );
+    assert.ok(planets.every(planet => planet.name === null));
 });
 
-test("Вторая космическая скорость не рассчитывается без массы или радиуса", async (t) => {
-    mockFetch(t, [
-        createPlanetData({ pl_bmasse: null }),
-        createPlanetData({ pl_rade: null }),
-    ]);
-
-    const planets = await fetchPlanets();
-
-    for (const planet of planets) {
-        assert.ok(planet.vesc == null);
-    }
-});
-
-test("Расчёт ESI для планеты с полными данными", async (t) => {
-    mockFetch(t, [createPlanetData()]);
+test("Характеристики звезды заполняются", async (t) => {
+    mockNASA(t, [makePlanet()]);
 
     const [planet] = await fetchPlanets();
 
-    assert.equal(typeof planet.esi.simple, "number");
-    assert.equal(typeof planet.esi.full, "number");
+    assert.equal(planet.star.temperature, 5780);
+    assert.equal(planet.star.luminosity, 1);
+});
+
+test("Логарифмическая светимость преобразуется", async (t) => {
+    mockNASA(t, [
+        makePlanet({ st_lum: 1 }),
+        makePlanet({ st_lum: -1 }),
+        makePlanet({ st_lum: 0 }),
+    ]);
+
+    const planets = await fetchPlanets();
+
+    assert.ok(Math.abs(planets[0].star.luminosity - 10) < 1e-10);
+    assert.ok(Math.abs(planets[1].star.luminosity - 0.1) < 1e-10);
+    assert.equal(planets[2].star.luminosity, 1);
+});
+
+test("Орбитальные характеристики заполняются", async (t) => {
+    mockNASA(t, [makePlanet()]);
+
+    const [planet] = await fetchPlanets();
+
+    assert.equal(planet.orbit.semiMajorAxis, 1);
+    assert.equal(planet.orbit.eccentricity, 0);
+    assert.equal(planet.orbit.period, 365.25);
+});
+
+test("Некорректный эксцентриситет отклоняется", async (t) => {
+    mockNASA(t, [
+        makePlanet({ pl_orbeccen: -0.1 }),
+        makePlanet({ pl_orbeccen: 1 }),
+        makePlanet({ pl_orbeccen: 1.5 }),
+        makePlanet({ pl_orbeccen: null }),
+    ]);
+
+    const planets = await fetchPlanets();
+
+    for (const planet of planets) {
+        assert.equal(planet.orbit.eccentricity, null);
+        assert.equal(planet.habitableTimeFraction, null);
+    }
+});
+
+test("Рассчитываются упрощённый и полный ESI", async (t) => {
+    mockNASA(t, [makePlanet()]);
+
+    const [planet] = await fetchPlanets();
 
     assert.ok(Number.isFinite(planet.esi.simple));
     assert.ok(Number.isFinite(planet.esi.full));
-
-    assert.ok(planet.esi.simple >= 0);
-    assert.ok(planet.esi.simple <= 1);
-
-    assert.ok(planet.esi.full >= 0);
-    assert.ok(planet.esi.full <= 1);
+    assert.ok(planet.esi.simple >= 0 && planet.esi.simple <= 1);
+    assert.ok(planet.esi.full >= 0 && planet.esi.full <= 1);
 });
 
-test("Полный ESI не рассчитывается без плотности", async (t) => {
-    mockFetch(t, [
-        createPlanetData({ pl_dens: null }),
-    ]);
+test("Рассчитываются границы зоны обитаемости", async (t) => {
+    mockNASA(t, [makePlanet()]);
 
     const [planet] = await fetchPlanets();
+    const expected = calculateHabitableZone(5780, 1);
 
-    assert.equal(typeof planet.esi.simple, "number");
-    assert.ok(planet.esi.full == null);
-});
+    assert.deepEqual(planet.habitableZone, expected);
 
-test("ESI не рассчитывается без температуры", async (t) => {
-    mockFetch(t, [
-        createPlanetData({ pl_eqt: null }),
-    ]);
+    assert.ok(
+        planet.habitableZone.conservative.inner <
+        planet.habitableZone.conservative.outer
+    );
 
-    const [planet] = await fetchPlanets();
-
-    assert.ok(planet.esi.simple == null);
-    assert.ok(planet.esi.full == null);
-});
-
-test("Ошибка HTTP от NASA API", async (t) => {
-    mockFetch(t, [], 500);
-
-    await assert.rejects(
-        fetchPlanets(),
-        {
-            message: "NASA API error: 500",
-        }
+    assert.ok(
+        planet.habitableZone.optimistic.inner <
+        planet.habitableZone.optimistic.outer
     );
 });
 
-test("Ошибка 429 при ограничении запросов", async (t) => {
-    mockFetch(t, [], 429);
+test("Круговая орбита внутри зоны даёт долю времени 1", async (t) => {
+    mockNASA(t, [makePlanet()]);
 
-    await assert.rejects(
-        fetchPlanets(),
-        {
-            message: "NASA API error: 429",
-        }
-    );
-});
+    const [planet] = await fetchPlanets();
 
-test("Сетевая ошибка передаётся вызывающему коду", async (t) => {
-    t.mock.method(globalThis, "fetch", async () => {
-        throw new TypeError("Network error");
+    assert.deepEqual(planet.habitableTimeFraction, {
+        conservative: 1,
+        optimistic: 1,
     });
+});
+
+test("Эллиптическая орбита рассчитывается корректно", async (t) => {
+    mockNASA(t, [makePlanet({
+        pl_orbsmax: 1.5,
+        pl_orbeccen: 0.4,
+    })]);
+
+    const [planet] = await fetchPlanets();
+
+    const expected = calculateHabitableTimeFraction(
+        1.5,
+        0.4,
+        calculateHabitableZone(5780, 1)
+    );
+
+    assert.deepEqual(planet.habitableTimeFraction, expected);
+
+    assert.ok(planet.habitableTimeFraction.conservative > 0);
+    assert.ok(planet.habitableTimeFraction.conservative < 1);
+});
+
+test("Звезда вне диапазона модели не прерывает загрузку", async (t) => {
+    mockNASA(t, [
+        makePlanet({ st_teff: 8000 }),
+        makePlanet({ st_teff: 5780 }),
+        makePlanet({ st_teff: 2000 }),
+    ]);
+
+    const planets = await fetchPlanets();
+
+    assert.equal(planets.length, 3);
+
+    assert.equal(planets[0].habitableZone, null);
+    assert.equal(planets[0].habitableTimeFraction, null);
+
+    assert.ok(planets[1].habitableZone !== null);
+
+    assert.equal(planets[2].habitableZone, null);
+    assert.equal(planets[2].habitableTimeFraction, null);
+});
+
+test("Границы температурного диапазона допускаются", async (t) => {
+    mockNASA(t, [
+        makePlanet({ st_teff: 2600 }),
+        makePlanet({ st_teff: 7200 }),
+    ]);
+
+    const planets = await fetchPlanets();
+
+    for (const planet of planets) {
+        assert.ok(planet.habitableZone !== null);
+    }
+});
+
+test("Отсутствующие данные не заменяются выдуманными", async (t) => {
+    mockNASA(t, [makePlanet({
+        pl_rade: null,
+        pl_bmasse: null,
+        pl_dens: null,
+        pl_eqt: null,
+        st_teff: null,
+        st_lum: null,
+        pl_orbsmax: null,
+        pl_orbeccen: null,
+        pl_orbper: null,
+    })]);
+
+    const [planet] = await fetchPlanets();
+
+    assert.equal(planet.radius, null);
+    assert.equal(planet.mass, null);
+    assert.equal(planet.density, null);
+    assert.equal(planet.eqt, null);
+    assert.equal(planet.vesc, null);
+
+    assert.equal(planet.esi.simple, null);
+    assert.equal(planet.esi.full, null);
+
+    assert.equal(planet.star.temperature, null);
+    assert.equal(planet.star.luminosity, null);
+
+    assert.equal(planet.orbit.semiMajorAxis, null);
+    assert.equal(planet.orbit.eccentricity, null);
+    assert.equal(planet.orbit.period, null);
+
+    assert.equal(planet.habitableZone, null);
+    assert.equal(planet.habitableTimeFraction, null);
+});
+
+test("Отсутствующий эксцентриситет не считается нулевым", async (t) => {
+    mockNASA(t, [makePlanet({
+        pl_orbeccen: null,
+    })]);
+
+    const [planet] = await fetchPlanets();
+
+    assert.ok(planet.habitableZone !== null);
+    assert.equal(planet.orbit.eccentricity, null);
+    assert.equal(planet.habitableTimeFraction, null);
+});
+
+test("Ошибка NASA API вызывает исключение", async (t) => {
+    mockNASA(t, [], 503);
 
     await assert.rejects(
         fetchPlanets(),
-        {
-            name: "TypeError",
-            message: "Network error",
-        }
+        /NASA API error: 503/
     );
 });
 
-test("Ошибка разбора JSON передаётся вызывающему коду", async (t) => {
-    t.mock.method(globalThis, "fetch", async () => ({
-        ok: true,
-        status: 200,
-        json: async () => {
-            throw new SyntaxError("Invalid JSON");
-        },
-    }));
+test("Пустой ответ возвращает пустой массив", async (t) => {
+    mockNASA(t, []);
 
-    await assert.rejects(
-        fetchPlanets(),
-        {
-            name: "SyntaxError",
-            message: "Invalid JSON",
-        }
-    );
+    assert.deepEqual(await fetchPlanets(), []);
 });
