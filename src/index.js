@@ -56,7 +56,7 @@ async function updatePlanets(env) {
         }
     );
 
-    console.log(`Saved ${planets.length} planets`);
+    console.log(`Сохранено ${planets.length} планет`);
 
     return data;
 }
@@ -90,6 +90,16 @@ export default {
     },
 
     async scheduled(event, env, ctx) {
-        console.log("обновить");
+        console.log("актуализируем каталог...");
+        ctx.waitUntil(
+            updatePlanets(env)
+            .then(() => {
+                console.log("успешно актуализировали каталог...")
+            })
+            .catch((error) => {
+                console.error("актуализация провалена: ", error);
+                throw error;
+            })
+        )
     }
 };
