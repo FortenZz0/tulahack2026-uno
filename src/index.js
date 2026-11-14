@@ -19,7 +19,16 @@ const FIELDS = [
 ];
 
 const STORAGE_KEY = "planets.json";
+const PREVIEW_KEY = "preview.json";
 const MAX_KV_VALUE_SIZE = 25 * 1024 * 1024;
+
+// топ-50 по полному ESI
+function createPreview(planets) {
+    return planets
+        .filter(planet => Number.isFinite(planet.esi.full))
+        .sort((a, b) => b.esi.full - a.esi.full)
+        .slice(0, 50);
+}
 
 // из базы НАСА
 async function updatePlanets(env) {
@@ -51,6 +60,11 @@ async function updatePlanets(env) {
         planets
     };
 
+    const preview = {
+        updatedAt: data.updatedAt,
+        planets: createPreview(planets)
+    };
+
     const json = JSON.stringify(data);
     const size = new TextEncoder().encode(json).byteLength;
 
@@ -65,6 +79,11 @@ async function updatePlanets(env) {
         json
     );
 
+    await env.PLANETS_KV.put(
+        PREVIEW_KEY,
+        JSON.stringify(preview)
+    );
+
     console.log(`Сохранено ${planets.length} планет`);
 
     return data;
@@ -74,7 +93,7 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
 
-        if (url.pathname !== "/planets") {
+        if (url.pathname !== "/planets" || url.pathname !== "/preview") {
             return new Response("Not Found", {
                 status: 404
             });
@@ -96,6 +115,53 @@ export default {
         };
 
         try {
+            if (url.pathname === "/preview") {
+                let preview = await env.PLANETS_KV.get(PREVIEW_KEY);
+
+                if (preview === null) {
+                    const catalog = await env.PLANETS_KV.get(STORAGE_KEY);
+
+                    if (catalog !== null) {
+                        const data = JSON.parse(catalog);
+
+                        if (
+                            Array.isArray(data.planets) &&
+                            data.planets.every(planet =>
+                                planet !== null &&
+                                typeof planet === "object" &&
+                                planet.esi !== null &&
+                                typeof planet.esi === "object"
+                            )
+                        ) {
+                            preview = JSON.stringify({
+                                updatedAt: data.updatedAt,
+                                planets: createPreview(data.planets)
+                            });
+
+                            await env.PLANETS_KV.put(PREVIEW_KEY, preview);
+                        }
+                    }
+                }
+
+                if (preview !== null) {
+                    return new Response(preview, {
+                        headers: {
+                            ...headers,
+                            "Content-Type": "application/json"
+                        }
+                    });
+                }
+
+                const data = await updatePlanets(env);
+
+                return Response.json({
+                    updatedAt: data.updatedAt,
+                    planets: createPreview(data.planets)
+                }, {
+                    headers
+                });
+            }
+
             const object = await env.PLANETS_KV.get(STORAGE_KEY);
 
             if (object !== null) {
