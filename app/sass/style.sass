@@ -63,3 +63,27 @@ main
     grid-template-areas: "table vizual vizual" "table info stats"
     
     gap: 1.5rem
+
+
+
+.loader
+    position: relative
+
+    .loader-symbol
+        position: absolute
+        display: block
+        top: 50%
+        left: 50%
+        transform: translate(-50%, -50%)
+        width: 20px
+        height: 20px
+        font-size: 20px
+        color: var(--color-text-2)
+        animation: loader-spin 1s linear infinite
+        z-index: 100
+
+@keyframes loader-spin
+    from
+        transform: translate(-50%, -50%) rotate(0deg)
+    to
+        transform: translate(-50%, -50%) rotate(360deg)

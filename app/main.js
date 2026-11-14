@@ -15,3 +15,8 @@ import.meta.glob(
 import.meta.glob("./sass/response.sass", {eager: true}) // импортируем адаптив последним для наивысшего приоритета
 
 // такая последовательность импортов стилей нужна для контроля очерёдности импорта стилей и их правильного приоритета
+
+
+$(document).ready(() => {
+    $(".loader").append('<i class="fa-solid fa-spinner loader-symbol"></i>')
+})
