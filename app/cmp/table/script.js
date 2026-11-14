@@ -14,7 +14,6 @@ input.on("focusout", () => {
 
 
 
-
 document.querySelectorAll(".planets-list .checkbox").forEach((selector) => {
     selector.addEventListener("click", (event) => {
         const button = event.target.closest("button[data-option]");

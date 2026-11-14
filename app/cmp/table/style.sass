@@ -85,3 +85,70 @@ section.table
             &[data-active="ESI"] [data-option="ESI"],
             &[data-active="PHI"] [data-option="PHI"]
                 color: var(--color-accent-1)
+    
+
+    .planets-list
+        --card-height: 60px
+
+        height: var(--card-height)
+
+        .planet-card
+            height: 100%
+            cursor: pointer
+            
+
+            .index
+                height: var(--card-height)
+                width: var(--card-height)
+                background: var(--color-block-background-2) 
+                border-radius: 50%
+                transition: 0.3s ease-in-out
+
+                span
+                    font-family: "Consolas"
+                    transition: inherit
+                    font-weight: 600
+            
+            .name
+                h5
+                    letter-spacing: 3px
+                    transition: 0.3s ease-in-out
+                span
+                    font-size: 12px
+                    i
+                        color: inherit
+            
+            .values
+                & > div
+                    .desc
+                        font-size: 12px
+                    
+                    &.good span            // >= 0.8
+                        color: #46EE71
+                    &.normal span          // >= 0.5
+                        color: #eec146
+                    &.bad span             // >= 0
+                        color: #ee4646
+            
+
+            &:hover:not(.selected)
+
+                .index 
+                    span
+                        color: var(--color-accent-1)
+                
+                .name
+                    h5
+                        color: var(--color-accent-1)
+                        letter-spacing: 3px
+            
+            &.selected
+                .index 
+                    background: var(--color-accent-1)
+                    span
+                        color: var(--color-block-background-2)
+                
+                .name
+                    h5
+                        color: var(--color-accent-1)
+
