@@ -2,7 +2,7 @@
 // перед вызовом, проверить аргументы на тип и null
 
 
-function calculateESIcomponent(
+export function calculateESIcomponent(
     value, 
     earthValue, 
     weight
@@ -13,7 +13,7 @@ function calculateESIcomponent(
 }
 
 
-function calculateESI(
+export function calculateESI(
     radius,
     density,
     vesc,
@@ -42,10 +42,3 @@ export function calculateSimpleESI(radius, flux) {
 
     return 1 - Math.sqrt((dr ** 2 + ds ** 2) / 2);
 }
-
-
-export {
-    calculateESIcomponent,
-    calculateESI,
-    calculateSimpleESI
-};

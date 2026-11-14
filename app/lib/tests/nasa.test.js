@@ -4,13 +4,15 @@ import assert from "node:assert/strict";
 
 import { fetchPlanets } from "../nasa.js";
 import { Planet } from "../planet.js";
+import { calculateESI, calculateSimpleESI } from "../esi.js";
 
 const baseRow = {
     pl_name: "Test Planet",
     pl_rade: 1,
     pl_bmasse: 1,
     pl_dens: 5.51,
-    pl_eqt: 255,
+    pl_eqt: 288,
+    pl_insol: 1,
     st_teff: 5780,
     st_lum: 0,
     pl_orbsmax: 1,
@@ -19,14 +21,8 @@ const baseRow = {
 };
 
 const emptyZone = {
-    conservative: {
-        inner: null,
-        outer: null,
-    },
-    optimistic: {
-        inner: null,
-        outer: null,
-    },
+    conservative: { inner: null, outer: null },
+    optimistic: { inner: null, outer: null },
 };
 
 const emptyFraction = {
@@ -34,7 +30,7 @@ const emptyFraction = {
     optimistic: null,
 };
 
-function mockFetch(rows, status = 200) {
+async function withMockFetch(rows, callback, status = 200) {
     const originalFetch = globalThis.fetch;
 
     globalThis.fetch = async () => ({
@@ -43,18 +39,10 @@ function mockFetch(rows, status = 200) {
         json: async () => rows,
     });
 
-    return () => {
-        globalThis.fetch = originalFetch;
-    };
-}
-
-async function withMockFetch(rows, callback, status = 200) {
-    const restore = mockFetch(rows, status);
-
     try {
         return await callback();
     } finally {
-        restore();
+        globalThis.fetch = originalFetch;
     }
 }
 
@@ -74,7 +62,7 @@ test("Пустой ответ возвращает пустой каталог",
     });
 });
 
-test("Формирует запрос к таблице pscomppars", async () => {
+test("Запрос содержит pl_insol и таблицу pscomppars", async () => {
     const originalFetch = globalThis.fetch;
     let requestedUrl;
 
@@ -94,8 +82,10 @@ test("Формирует запрос к таблице pscomppars", async () =>
         const query = requestedUrl.searchParams.get("query");
 
         assert.match(query, /FROM pscomppars/);
+        assert.match(query, /pl_insol/);
         assert.match(query, /pl_name/);
         assert.match(query, /pl_orbeccen/);
+
         assert.equal(
             requestedUrl.searchParams.get("format"),
             "json"
@@ -105,14 +95,15 @@ test("Формирует запрос к таблице pscomppars", async () =>
     }
 });
 
-test("Правильно переносит основные характеристики", async () => {
+test("Переносит основные характеристики", async () => {
     await withMockFetch([baseRow], async () => {
         const [planet] = await fetchPlanets();
 
         assert.equal(planet.mass, 1);
         assert.equal(planet.radius, 1);
         assert.equal(planet.density, 5.51);
-        assert.equal(planet.eqt, 255);
+        assert.equal(planet.eqt, 288);
+        assert.equal(planet.flux, 1);
 
         assert.equal(planet.star.temperature, 5780);
         assert.equal(planet.star.luminosity, 1);
@@ -131,7 +122,7 @@ test("Вычисляет скорость убегания", async () => {
     });
 });
 
-test("Преобразует логарифмическую светимость NASA", async () => {
+test("Преобразует логарифмическую светимость", async () => {
     await withMockFetch([
         { ...baseRow, st_lum: 1 },
         { ...baseRow, st_lum: -1 },
@@ -145,27 +136,106 @@ test("Преобразует логарифмическую светимость
     });
 });
 
-test("Вычисляет показатели ESI", async () => {
+test("Вычисляет полный ESI", async () => {
     await withMockFetch([baseRow], async () => {
         const [planet] = await fetchPlanets();
 
-        assert.ok(
-            planet.esi.full === null ||
-            (
-                Number.isFinite(planet.esi.full) &&
-                planet.esi.full >= 0 &&
-                planet.esi.full <= 1
-            )
+        assert.equal(
+            planet.esi.full,
+            calculateESI(1, 5.51, 11.186, 288)
         );
+    });
+});
 
-        assert.ok(
-            planet.esi.simple === null ||
-            (
-                Number.isFinite(planet.esi.simple) &&
-                planet.esi.simple >= 0 &&
-                planet.esi.simple <= 1
-            )
+test("Вычисляет упрощённый ESI по радиусу и flux", async () => {
+    await withMockFetch([
+        { ...baseRow, pl_rade: 2, pl_insol: 2 },
+    ], async () => {
+        const [planet] = await fetchPlanets();
+
+        assert.equal(planet.flux, 2);
+        assert.equal(
+            planet.esi.simple,
+            calculateSimpleESI(2, 2)
         );
+        assert.ok(
+            Math.abs(planet.esi.simple - 2 / 3) < 1e-10
+        );
+    });
+});
+
+test("Без flux упрощённый ESI неизвестен", async () => {
+    await withMockFetch([
+        { ...baseRow, pl_insol: null },
+    ], async () => {
+        const [planet] = await fetchPlanets();
+
+        assert.equal(planet.flux, null);
+        assert.equal(planet.esi.simple, null);
+        assert.ok(Number.isFinite(planet.esi.full));
+    });
+});
+
+test("Нулевой flux допустим", async () => {
+    await withMockFetch([
+        { ...baseRow, pl_insol: 0 },
+    ], async () => {
+        const [planet] = await fetchPlanets();
+
+        assert.equal(planet.flux, 0);
+        assert.equal(
+            planet.esi.simple,
+            calculateSimpleESI(1, 0)
+        );
+    });
+});
+
+test("Отрицательный flux отклоняется", async () => {
+    await withMockFetch([
+        { ...baseRow, pl_insol: -2 },
+    ], async () => {
+        const [planet] = await fetchPlanets();
+
+        assert.equal(planet.flux, null);
+        assert.equal(planet.esi.simple, null);
+    });
+});
+
+test("Flux не вычисляется из светимости и орбиты", async () => {
+    await withMockFetch([
+        {
+            ...baseRow,
+            pl_insol: null,
+            st_lum: 0,
+            pl_orbsmax: 1,
+        },
+    ], async () => {
+        const [planet] = await fetchPlanets();
+
+        assert.equal(planet.flux, null);
+        assert.equal(planet.esi.simple, null);
+    });
+});
+
+test("Без радиуса оба ESI неизвестны", async () => {
+    await withMockFetch([
+        { ...baseRow, pl_rade: null },
+    ], async () => {
+        const [planet] = await fetchPlanets();
+
+        assert.equal(planet.esi.full, null);
+        assert.equal(planet.esi.simple, null);
+    });
+});
+
+test("Без плотности полный ESI неизвестен", async () => {
+    await withMockFetch([
+        { ...baseRow, pl_dens: null },
+    ], async () => {
+        const [planet] = await fetchPlanets();
+
+        assert.equal(planet.esi.full, null);
+        assert.equal(planet.esi.simple, 1);
     });
 });
 
@@ -291,13 +361,14 @@ test("Границы температурной модели допустимы"
     });
 });
 
-test("Отсутствующие данные не заменяются выдуманными", async () => {
+test("Отсутствующие данные остаются null", async () => {
     await withMockFetch([{
         pl_name: "Unknown Planet",
         pl_rade: null,
         pl_bmasse: null,
         pl_dens: null,
         pl_eqt: null,
+        pl_insol: null,
         st_teff: null,
         st_lum: null,
         pl_orbsmax: null,
@@ -312,6 +383,10 @@ test("Отсутствующие данные не заменяются выду
         assert.equal(planet.density, null);
         assert.equal(planet.vesc, null);
         assert.equal(planet.eqt, null);
+        assert.equal(planet.flux, null);
+
+        assert.equal(planet.esi.full, null);
+        assert.equal(planet.esi.simple, null);
 
         assert.equal(planet.star.temperature, null);
         assert.equal(planet.star.luminosity, null);
@@ -335,6 +410,7 @@ test("Некорректные числовые значения становя�
         pl_bmasse: "invalid",
         pl_dens: 0,
         pl_eqt: -100,
+        pl_insol: -5,
         pl_orbper: -5,
     }], async () => {
         const [planet] = await fetchPlanets();
@@ -343,8 +419,11 @@ test("Некорректные числовые значения становя�
         assert.equal(planet.mass, null);
         assert.equal(planet.density, null);
         assert.equal(planet.eqt, null);
+        assert.equal(planet.flux, null);
         assert.equal(planet.orbit.period, null);
         assert.equal(planet.vesc, null);
+        assert.equal(planet.esi.full, null);
+        assert.equal(planet.esi.simple, null);
     });
 });
 
@@ -393,10 +472,7 @@ test("Ошибка HTTP вызывает исключение", async () => {
 
 test("Некорректный формат ответа вызывает исключение", async () => {
     await withMockFetch({ planets: [] }, async () => {
-        await assert.rejects(
-            fetchPlanets(),
-            TypeError
-        );
+        await assert.rejects(fetchPlanets(), TypeError);
     });
 });
 

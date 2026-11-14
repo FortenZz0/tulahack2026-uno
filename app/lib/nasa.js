@@ -1,4 +1,3 @@
-
 import { Planet } from "./planet.js";
 import { calculateESI, calculateSimpleESI } from "./esi.js";
 import {
@@ -14,6 +13,7 @@ const FIELDS = [
     "pl_bmasse",
     "pl_dens",
     "pl_eqt",
+    "pl_insol",
     "st_teff",
     "st_lum",
     "pl_orbsmax",
@@ -27,14 +27,17 @@ function parseNumber(value) {
     }
 
     const number = Number(value);
-
     return Number.isFinite(number) ? number : null;
 }
 
 function parsePositiveNumber(value) {
     const number = parseNumber(value);
-
     return number !== null && number > 0 ? number : null;
+}
+
+function parseNonNegativeNumber(value) {
+    const number = parseNumber(value);
+    return number !== null && number >= 0 ? number : null;
 }
 
 function parseEccentricity(value) {
@@ -60,6 +63,7 @@ function createPlanet(row) {
     planet.radius = parsePositiveNumber(row.pl_rade);
     planet.density = parsePositiveNumber(row.pl_dens);
     planet.eqt = parsePositiveNumber(row.pl_eqt);
+    planet.flux = parseNonNegativeNumber(row.pl_insol);
 
     planet.star.temperature = parsePositiveNumber(row.st_teff);
 
@@ -86,26 +90,25 @@ function createPlanet(row) {
 
     if (
         planet.radius !== null &&
+        planet.density !== null &&
+        planet.vesc !== null &&
         planet.eqt !== null
     ) {
-        planet.esi.simple = calculateSimpleESI(
+        planet.esi.full = calculateESI(
             planet.radius,
+            planet.density,
+            planet.vesc,
             planet.eqt
         );
-
-        if (
-            planet.density !== null &&
-            planet.vesc !== null
-        ) {
-            planet.esi.full = calculateESI(
-                planet.radius,
-                planet.density,
-                planet.vesc,
-                planet.eqt
-            );
-        }
     }
-    
+
+    if (planet.radius !== null && planet.flux !== null) {
+        planet.esi.simple = calculateSimpleESI(
+            planet.radius,
+            planet.flux
+        );
+    }
+
     const temperature = planet.star.temperature;
     const luminosity = planet.star.luminosity;
 
@@ -148,7 +151,6 @@ function createPlanet(row) {
 
 export async function fetchPlanets() {
     const query = `SELECT ${FIELDS.join(", ")} FROM pscomppars`;
-
     const url = new URL(NASA_URL);
 
     url.searchParams.set("query", query);
