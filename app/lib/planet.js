@@ -41,4 +41,10 @@ export class Planet {
         conservative: null,
         optimistic: null
     };
+
+    classification = {
+// 'terrestrial' | 'super-earth' | 'sub-neptune' | 'neptune' | 'jupiter'
+        sizeClass: null,
+        
+    }
 }

@@ -55,6 +55,24 @@ function parseName(value) {
         : null;
 }
 
+export function classifyPlanet(radius) {
+    if (typeof radius !== "number" ||
+        !Number.isFinite(radius) || 
+        radius <= 0
+    ) {
+        return null;
+    }
+
+    if (radius < 0.5) return 'MINI';
+    if (radius < 1.0) return "terrestrial";
+    if (radius < 1.75) return "super-earth";
+    if (radius < 3.5) return "sub-neptune";
+    if (radius < 6.0) return "neptune";
+    if (radius <= 14.3) return "jupiter";
+
+    return 'MEGA';
+}
+
 function createPlanet(row) {
     const planet = new Planet();
 
@@ -147,6 +165,8 @@ function createPlanet(row) {
             }
         }
     }
+
+    planet.classification.sizeClass = classifyPlanet(planet.radius);
 
     return planet;
 }
