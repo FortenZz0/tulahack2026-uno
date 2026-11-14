@@ -97,9 +97,8 @@ test("Каталог загружается через публичный API", 
             maxAttempts: 1,
         });
 
-        await library.refresh();
+        await library.init();
 
-        assert.equal(library.status, "ready");
         assert.equal(library.getPlanets().length, 3);
         assert.ok(library.lastUpdated instanceof Date);
     });
@@ -111,7 +110,7 @@ test("getPlanets поддерживает фильтрацию", async () => {
             maxAttempts: 1,
         });
 
-        await library.refresh();
+        await library.init();
 
         const result = library.getPlanets({
             filters: {
@@ -132,7 +131,7 @@ test("getPlanets поддерживает сортировку", async () => {
             maxAttempts: 1,
         });
 
-        await library.refresh();
+        await library.init();
 
         const result = library.getPlanets({
             sort: {
@@ -154,7 +153,7 @@ test("getPlanets поддерживает пагинацию", async () => {
             maxAttempts: 1,
         });
 
-        await library.refresh();
+        await library.init();
 
         const result = library.getPlanets({
             sort: {
@@ -178,7 +177,7 @@ test("getPlanets объединяет фильтрацию и сортировк
             maxAttempts: 1,
         });
 
-        await library.refresh();
+        await library.init();
 
         const result = library.getPlanets({
             filters: {
@@ -203,7 +202,7 @@ test("getPlanets не изменяет исходный каталог", async (
             maxAttempts: 1,
         });
 
-        await library.refresh();
+        await library.init();
 
         const original = library.getPlanets();
 
@@ -218,26 +217,11 @@ test("getPlanets не изменяет исходный каталог", async (
     });
 });
 
-test("Подписка на updated работает через публичный API", async () => {
-    await withMockFetch(async () => {
-        const library = new ExoplanetLibrary({
-            maxAttempts: 1,
-        });
-
-        let updates = 0;
-
-        const unsubscribe = library.subscribe("updated", () => {
-            updates++;
-        });
-
-        await library.refresh();
-        assert.equal(updates, 1);
-
-        unsubscribe();
-
-        await library.refresh();
-        assert.equal(updates, 1);
-    });
+test("Публичный API не содержит событий и состояния загрузки", () => {
+    const library = new ExoplanetLibrary();
+    assert.equal(library.subscribe, undefined);
+    assert.equal(library.status, undefined);
+    assert.equal(library.error, undefined);
 });
 
 test("Повторное обновление заменяет каталог", async () => {
@@ -246,11 +230,11 @@ test("Повторное обновление заменяет каталог", 
             maxAttempts: 1,
         });
 
-        await library.refresh();
+        await library.init();
 
         const first = library.getPlanets();
 
-        await library.refresh();
+        assert.equal(await library.refresh(), undefined);
 
         const second = library.getPlanets();
 
@@ -265,7 +249,7 @@ test("Некорректный запрос отклоняется через п
             maxAttempts: 1,
         });
 
-        await library.refresh();
+        await library.init();
 
         assert.throws(() => {
             library.getPlanets({

@@ -1,5 +1,4 @@
 // формат options {
-//   search: имя,
 //   filters: {...},
 //   sort: { by: ..., order: "asc" | "desc" },
 //   offset: number,
