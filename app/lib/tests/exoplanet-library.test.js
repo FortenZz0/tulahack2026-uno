@@ -39,28 +39,49 @@ test("Успешная загрузка каталога", async (t) => {
 
     const library = new ExoplanetLibrary();
 
-    await library.refresh();
+    const result = await library.refresh();
 
     assert.equal(library.status, "ready");
-    assert.equal(library.getPlanets().length, 1);
+    assert.equal(result.length, 1);
     assert.equal(library.getPlanets()[0].name, "Kepler-22 b");
     assert.ok(library.lastUpdated instanceof Date);
     assert.equal(library.error, null);
 });
 
-test("Уведомление об успешном обновлении", async (t) => {
+test("Возвращается копия массива каталога", async (t) => {
+    mockNASA(t, [{
+        data: [{ pl_name: "Kepler-22 b" }],
+    }]);
+
+    const library = new ExoplanetLibrary();
+
+    await library.refresh();
+
+    const planets = library.getPlanets();
+    planets.pop();
+
+    assert.equal(library.getPlanets().length, 1);
+});
+
+test("События loading и updated вызываются в правильном порядке", async (t) => {
     mockNASA(t, [{ data: [] }]);
 
     const library = new ExoplanetLibrary();
-    let updated = 0;
+    const events = [];
+
+    library.subscribe("loading", () => {
+        events.push("loading");
+        assert.equal(library.status, "loading");
+    });
 
     library.subscribe("updated", () => {
-        updated++;
+        events.push("updated");
+        assert.equal(library.status, "ready");
     });
 
     await library.refresh();
 
-    assert.equal(updated, 1);
+    assert.deepEqual(events, ["loading", "updated"]);
 });
 
 test("Отписка от событий", async (t) => {
@@ -151,6 +172,27 @@ test("Промежуточная ошибка не вызывает событи
     assert.equal(library.error, null);
 });
 
+test("Ошибка возникает после исчерпания всех попыток", async (t) => {
+    mockNASA(t, [new Error("NASA unavailable")]);
+
+    const library = new ExoplanetLibrary({
+        maxAttempts: 2,
+        retryDelay: 0,
+    });
+
+    let errors = 0;
+
+    library.subscribe("error", () => {
+        errors++;
+    });
+
+    await assert.rejects(library.refresh(), /NASA unavailable/);
+
+    assert.equal(errors, 1);
+    assert.equal(library.status, "error");
+    assert.match(library.error.message, /NASA unavailable/);
+});
+
 test("Старый каталог сохраняется после неудачного обновления", async (t) => {
     const getCalls = mockNASA(t, [
         { data: [{ pl_name: "Kepler-22 b" }] },
@@ -172,27 +214,46 @@ test("Старый каталог сохраняется после неудач
     assert.equal(library.status, "error");
     assert.equal(library.getPlanets()[0].name, "Kepler-22 b");
     assert.equal(library.lastUpdated, lastUpdated);
-    assert.match(library.error.message, /NASA unavailable/);
 });
 
-test("Параллельные вызовы refresh не создают лишних запросов", async (t) => {
+test("Параллельные вызовы refresh используют один запрос", async (t) => {
     const getCalls = mockNASA(t, [{
         data: [{ pl_name: "Kepler-22 b" }],
     }]);
 
     const library = new ExoplanetLibrary();
 
-    await Promise.all([
+    const [first, second, third] = await Promise.all([
         library.refresh(),
         library.refresh(),
         library.refresh(),
     ]);
 
     assert.equal(getCalls(), 1);
-    assert.equal(library.getPlanets().length, 1);
+    assert.deepEqual(first, second);
+    assert.deepEqual(second, third);
 });
 
-test("Некорректные параметры повторных попыток", () => {
+test("Повторный refresh из loading не создаёт второй запрос", async (t) => {
+    const getCalls = mockNASA(t, [{ data: [] }]);
+
+    const library = new ExoplanetLibrary();
+    let secondRefresh;
+
+    library.subscribe("loading", () => {
+        secondRefresh = library.refresh();
+    });
+
+    const firstRefresh = library.refresh();
+
+    assert.strictEqual(firstRefresh, secondRefresh);
+
+    await firstRefresh;
+
+    assert.equal(getCalls(), 1);
+});
+
+test("Некорректные параметры отклоняются", () => {
     assert.throws(
         () => new ExoplanetLibrary({ maxAttempts: 0 }),
         RangeError,
@@ -206,5 +267,19 @@ test("Некорректные параметры повторных попыт�
     assert.throws(
         () => new ExoplanetLibrary({ retryDelay: -100 }),
         RangeError,
+    );
+});
+
+test("Некорректная подписка отклоняется", () => {
+    const library = new ExoplanetLibrary();
+
+    assert.throws(
+        () => library.subscribe("unknown", () => {}),
+        RangeError,
+    );
+
+    assert.throws(
+        () => library.subscribe("updated", null),
+        TypeError,
     );
 });

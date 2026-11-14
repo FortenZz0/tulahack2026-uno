@@ -1,6 +1,5 @@
 import { fetchPlanets } from "./nasa.js";
 
-
 export class ExoplanetLibrary {
     #planets = [];
     #status = "idle";
@@ -8,11 +7,12 @@ export class ExoplanetLibrary {
     #error = null;
     #listeners = new Map();
     #pendingRefresh = null;
+
     #maxAttempts;
     #retryDelay;
 
     constructor({ maxAttempts = 5, retryDelay = 1000 } = {}) {
-        if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
+        if (!Number.isSafeInteger(maxAttempts) || maxAttempts < 1) {
             throw new RangeError("maxAttempts must be a positive integer");
         }
 
@@ -22,22 +22,6 @@ export class ExoplanetLibrary {
 
         this.#maxAttempts = maxAttempts;
         this.#retryDelay = retryDelay;
-    }
-
-    async #fetchWithRetry() {
-        for (let attempt = 1; attempt <= this.#maxAttempts; attempt++) {
-            try {
-                return await fetchPlanets();
-            } catch (error) {
-                if (attempt === this.#maxAttempts) {
-                    throw error;
-                }
-
-                const delay = this.#retryDelay * 2 ** (attempt - 1);
-
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
     }
 
     get status() {
@@ -57,7 +41,7 @@ export class ExoplanetLibrary {
     }
 
     subscribe(event, callback) {
-        if (!["updated", "loading", "error"].includes(event)) {
+        if (!["loading", "updated", "error"].includes(event)) {
             throw new RangeError(`Unknown event: ${event}`);
         }
 
@@ -85,6 +69,22 @@ export class ExoplanetLibrary {
         }
     }
 
+    async #fetchWithRetry() {
+        for (let attempt = 1; attempt <= this.#maxAttempts; attempt++) {
+            try {
+                return await fetchPlanets();
+            } catch (error) {
+                if (attempt === this.#maxAttempts) {
+                    throw error;
+                }
+
+                const delay = this.#retryDelay * 2 ** (attempt - 1);
+
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
     refresh() {
         if (this.#pendingRefresh) {
             return this.#pendingRefresh;
@@ -92,28 +92,42 @@ export class ExoplanetLibrary {
 
         this.#status = "loading";
         this.#error = null;
-        this.#emit("loading");
 
-        this.#pendingRefresh = (async () => {
-            try {
-                const planets = await this.#fetchWithRetry();
-
+        const pending = this.#fetchWithRetry().then(
+            planets => {
                 this.#planets = planets;
                 this.#lastUpdated = new Date();
                 this.#status = "ready";
                 this.#emit("updated");
 
                 return this.getPlanets();
-            } catch (error) {
+            },
+            error => {
                 this.#error = error;
                 this.#status = "error";
                 this.#emit("error");
-                throw error;
-            } finally {
-                this.#pendingRefresh = null;
-            }
-        })();
 
-        return this.#pendingRefresh;
+                throw error;
+            },
+        );
+
+        this.#pendingRefresh = pending;
+
+        void pending.then(
+            () => {
+                if (this.#pendingRefresh === pending) {
+                    this.#pendingRefresh = null;
+                }
+            },
+            () => {
+                if (this.#pendingRefresh === pending) {
+                    this.#pendingRefresh = null;
+                }
+            },
+        );
+
+        this.#emit("loading");
+
+        return pending;
     }
 }
