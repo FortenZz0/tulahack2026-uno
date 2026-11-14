@@ -1,0 +1,25 @@
+header
+    height: var(--header-height)
+    background: var(--header-background)
+
+    & > div
+        height: 100%
+        position: relative
+
+        &::after
+            content: ""
+            position: absolute
+            bottom: 0
+            left: 50%
+            transform: translateX(-50%)
+            width: calc(100% - 2 * var(--bs-gutter-x, .75rem))
+            height: 1px
+            background: var(--color-block-border)
+    
+    .logo
+        height: var(--header-height)
+        display: flex
+        align-items: center
+
+        img
+            height: 100%

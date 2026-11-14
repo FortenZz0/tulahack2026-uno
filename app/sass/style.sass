@@ -1,5 +1,65 @@
-p
-    font-family: 'Montserrat', sans-serif
+body
+    background: var(--color-background)
+    overflow: hidden
+
+    &.color-sheme-1_black
+        --color-background:        #070913
+        --color-accent-1:          #ADA0FF
+        --color-text-1:            #FFFFFF
+        --color-text-2:            #8090B3
+
+        --color-canvas-background: #0e1424
+
+        --color-block-background:  #101529
+        --color-block-gradient:    linear-gradient(135deg, #12172c 30%, #1A1F3B 100%)
+        --color-block-border:      #2a3351
+        --block-border-radius:     20px
+
+        --header-height:           100px
+        --header-background:       #090D1D
+
+        --main-padding-y:          30px    
+
+
+*
+    margin: 0
+    font-family: 'Inter', sans-serif
+    color: var(--color-text-1)
+
+h1
+    margin: 0
+    font-size: 2rem
     font-weight: 600
-    font-size: 24px
-    color: red
+
+span
+    color: var(--color-text-2)
+    letter-spacing: 3px
+
+    i
+        color: var(--color-accent-1)
+    
+    &.accent
+        color: var(--color-accent-1)
+
+main
+    height: calc(100vh - var(--header-height))
+    padding-top: var(--main-padding-y)
+    padding-bottom: var(--main-padding-y)
+
+
+.block
+    background: var(--color-block-gradient)
+    border: 1px solid var(--color-block-border)
+    border-radius: var(--block-border-radius)
+
+
+.main-grid-container
+    height: 100%
+    display: grid
+
+    grid-template-columns: 1fr .8fr .8fr
+    grid-template-rows: 1fr 1fr
+    
+    grid-template-areas: "table vizual vizual" "table info stats"
+    
+    gap: 1.5rem
