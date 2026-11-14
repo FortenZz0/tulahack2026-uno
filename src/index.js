@@ -1,3 +1,5 @@
+import { parseNASAPlanets } from "./nasa.js";
+
 const NASA_URL =
     "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
 
@@ -17,6 +19,7 @@ const FIELDS = [
 ];
 
 const STORAGE_KEY = "planets.json";
+const MAX_KV_VALUE_SIZE = 25 * 1024 * 1024;
 
 // из базы НАСА
 async function updatePlanets(env) {
@@ -35,25 +38,31 @@ async function updatePlanets(env) {
         throw new Error(`NASA API returned ${response.status}`);
     }
 
-    const planets = await response.json();
+    const rows = await response.json();
 
-    if (!Array.isArray(planets)) {
+    if (!Array.isArray(rows)) {
         throw new Error("Invalid NASA API response");
     }
+
+    const planets = parseNASAPlanets(rows);
 
     const data = {
         updatedAt: new Date().toISOString(),
         planets
     };
 
+    const json = JSON.stringify(data);
+    const size = new TextEncoder().encode(json).byteLength;
+
+    if (size > MAX_KV_VALUE_SIZE) {
+        throw new Error(
+            `Planet catalog exceeds KV limit: ${size} bytes`
+        );
+    }
+
     await env.PLANETS_KV.put(
         STORAGE_KEY,
-        JSON.stringify(data),
-        {
-            httpMetadata: {
-                contentType: "application/json"
-            }
-        }
+        json
     );
 
     console.log(`Сохранено ${planets.length} планет`);
@@ -90,7 +99,7 @@ export default {
             const object = await env.PLANETS_KV.get(STORAGE_KEY);
 
             if (object !== null) {
-                return new Response(object.body, {
+                return new Response(object, {
                     headers: {
                         ...headers,
                         "Content-Type": "application/json"
