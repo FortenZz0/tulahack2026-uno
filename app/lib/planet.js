@@ -8,6 +8,8 @@ export class Planet {
     vesc = null;
     eqt = null;
 
+    flux = null;
+
     star = {
         temperature: null,
         luminosity: null,
