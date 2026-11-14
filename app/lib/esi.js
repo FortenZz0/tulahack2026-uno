@@ -27,15 +27,20 @@ function calculateESI(
     return (r * d * v * t) ** (1 / 4);
 }
 
+export function calculateSimpleESI(radius, flux) {
+    if (
+        !Number.isFinite(radius) ||
+        !Number.isFinite(flux) ||
+        radius <= 0 ||
+        flux < 0
+    ) {
+        return null;
+    }
 
-function calculateSimpleESI(
-    radius,
-    eqt
-) {
-    const r = calculateESIcomponent(radius, 1, 0.57);
-    const t = calculateESIcomponent(eqt, 288, 5.58);
+    const dr = (radius - 1) / (radius + 1);
+    const ds = (flux - 1) / (flux + 1);
 
-    return Math.sqrt(r * t);
+    return 1 - Math.sqrt((dr ** 2 + ds ** 2) / 2);
 }
 
 
