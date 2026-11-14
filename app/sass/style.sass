@@ -1,12 +1,12 @@
-*
-    margin: 0
-    
 body
     background: var(--color-background)
     overflow: hidden
 
     &.color-sheme-1_black
         --color-background:        #070913
+        --color-accent-1           #ADA0FF
+        --color-text-1:            #FFFFFF
+        --color-text-2:            #8090B3
 
         --color-block-background:  #101529
         --color-block-gradient:    linear-gradient(135deg, #12172c 30%, #1A1F3B 100%)
@@ -16,9 +16,22 @@ body
         --header-height:           100px
         --header-background:       #090D1D
 
-        --main-padding-y:          30px        
-    
+        --main-padding-y:          30px    
 
+
+*
+    margin: 0
+    font-family: 'Inter', sans-serif
+    color: var(--color-text-1)
+
+h1
+    margin: 0
+    font-size: 2rem
+    font-weight: 600
+
+span
+    color: var(--color-text-2)
+    letter-spacing: 3px
 
 main
     height: calc(100vh - var(--header-height))
