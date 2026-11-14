@@ -5,20 +5,29 @@ import * as THREE from 'three';
 // ==========================================
 // НАСТРОЙКИ ВНЕШНЕГО ВИДА ПЛАНЕТЫ
 // ==========================================
-const planetState = {
-    style: 'spots',             // 'bands' (полосы) или 'spots' (континенты/кратеры)
-    primaryColor: '#2a5298',    // Основной цвет
-    secondaryColor: '#1e3c72',  // Цвет градиента
-    detailColor: '#76d742',     // Цвет деталей
-    atmosphereColor: '#2298ff', // Цвет свечения по краям
-    hasRings: false,             // Показывать ли кольца (true / false)
-    ringColor: '#a1c4fd',       // Цвет колец
-    rotationSpeed: 0.003,       // Скорость автовращения
-    tiltDegrees: -18,             // Наклон оси в градусах
-    showAxis: true,             // Показывать ли ось вращения (true / false)
-    axisColor: '#abbeba',       // Цвет линии и маркеров полюсов
-    axisLength: 1000,            // Длина оси (диаметр планеты равен 2.0)
-    axisOpacity: 0.2            // Прозрачность оси (от 0.1 до 1.0)
+const planetState = { 
+    style: 'noise',                // 'bands' (полосы) или 'noise' (континенты/кратеры)
+    
+    primaryColor: '#2a5298',     // Основной цвет
+    secondaryColor: '#1e3c72',   // Цвет градиента
+    detailColor: '#76d742',      // Цвет деталей
+    atmosphereColor: '#2298ff',  // Цвет свечения по краям
+    
+    hasRings: false,               // Показывать ли кольца (true / false)
+    ringColor: '#a1c4fd',        // Цвет колец
+    
+    rotationSpeed: 0.003,          // Скорость автовращения
+    tiltDegrees: -18,              // Наклон оси в градусах
+    
+    showAxis: true,                // Показывать ли ось вращения (true / false)
+    axisColor: '#abbeba',        // Цвет линии и маркеров полюсов
+    axisLength: 1000,              // Длина оси (диаметр планеты равен 2.0)
+    axisOpacity: 0.2,              // Прозрачность оси (от 0.1 до 1.0)noiseScale: 1.9,
+    
+    noiseScale: 1.5,               // Размер континентов: 1.0 (гигантские материки) — 4.5 (мелкие острова)
+    noiseOctaves: 8,               // Детализация береговой линии: 1 (гладкие пятна) — 5 (изрезанные берега)
+    landThreshold: 0.05,           // Доля суши: -0.25 (почти вся планета суша) — 0.25 (только мелкие архипелаги)
+    noiseSeed: 12                  // Фиксированное зерно генерации (число или null для случайного при каждом вызове)
 };
 
 
@@ -85,12 +94,14 @@ function noise3D(x, y, z) {
 }
 
 // Складываем 4 слоя шума для красивой береговой линии
-function fbm(x, y, z) {
+function fbm(x, y, z, octaves = 4) {
   let value = 0;
   let amplitude = 0.5;
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < octaves; i++) {
     value += amplitude * noise3D(x, y, z);
-    x *= 2.05; y *= 2.05; z *= 2.05;
+    x *= 2.05;
+    y *= 2.05;
+    z *= 2.05;
     amplitude *= 0.5;
   }
   return value;
@@ -155,10 +166,13 @@ function generateSurfaceTexture(config) {
     const cOcean = hexToRgb(config.primaryColor);
     const cDeep = hexToRgb(config.secondaryColor);
     const cLand = hexToRgb(config.detailColor);
-    
-    // Цвет береговой каймы (смешиваем цвет океана с белым на 25%)
     const cShore = mixRgb(cOcean, [255, 255, 255], 0.25);
-    const seed = Math.random() * 100;
+
+    // Читаем параметры шума из настроек планеты
+    const scale = config.noiseScale ?? 1.9;
+    const octaves = Math.max(1, Math.min(6, Math.round(config.noiseOctaves ?? 4)));
+    const threshold = config.landThreshold ?? 0.01;
+    const seed = typeof config.noiseSeed === 'number' ? config.noiseSeed : Math.random() * 100;
 
     for (let y = 0; y < height; y++) {
       const phi = (y / height) * Math.PI;
@@ -172,22 +186,20 @@ function generateSurfaceTexture(config) {
         const ny = cosPhi;
         const nz = sinPhi * Math.sin(theta);
 
-        const scale = 1.9;
-        const n = fbm(nx * scale + seed, ny * scale + seed, nz * scale + seed);
+        const n = fbm(nx * scale + seed, ny * scale + seed, nz * scale + seed, octaves);
 
-        // 1. Плавный градиент глубины океана
-        const depthFactor = smoothstep(-0.35, -0.02, n);
+        // 1. Плавный градиент глубины океана относительно порога суши
+        const depthFactor = smoothstep(threshold - 0.36, threshold - 0.03, n);
         let color = mixRgb(cDeep, cOcean, depthFactor);
 
-        // 2. Мягкая береговая линия
-        const shoreFactor = smoothstep(-0.035, -0.01, n);
+        // 2. Мягкая береговая кайма
+        const shoreFactor = smoothstep(threshold - 0.045, threshold - 0.015, n);
         color = mixRgb(color, cShore, shoreFactor);
 
-        // 3. Чёткий, но сглаженный край суши
-        const landFactor = smoothstep(0.005, 0.02, n);
+        // 3. Чёткий, сглаженный край суши
+        const landFactor = smoothstep(threshold - 0.005, threshold + 0.01, n);
         color = mixRgb(color, cLand, landFactor);
 
-        // Записываем каналы R, G, B и Alpha
         const idx = (y * width + x) * 4;
         data[idx] = color[0];
         data[idx + 1] = color[1];
@@ -327,32 +339,36 @@ axisGroup.add(axisLine);
 // ФУНКЦИЯ БЫСТРОГО ОБНОВЛЕНИЯ ПЛАНЕТЫ
 // ==========================================
 window.updatePlanet = function(newProps) {
-    Object.assign(planetState, newProps);
+      Object.assign(planetState, newProps);
 
-    // Обновление текстуры поверхности (если менялись цвета или стиль)
-    if (newProps.style || newProps.primaryColor || newProps.secondaryColor || newProps.detailColor) {
-    if (sphereMat.map) sphereMat.map.dispose();
-    sphereMat.map = generateSurfaceTexture(planetState);
-    sphereMat.needsUpdate = true;
-    }
+      // Перерисовываем текстуру только если изменились цвета, стиль или параметры шума
+      const needTextureUpdate = [
+        'style', 'primaryColor', 'secondaryColor', 'detailColor',
+        'noiseScale', 'noiseOctaves', 'landThreshold', 'noiseSeed'
+      ].some(key => key in newProps);
 
-    // Обновление атмосферы, колец и наклона
-    atmoMat.uniforms.glowColor.value.set(planetState.atmosphereColor);
-    ringMat.color.set(planetState.ringColor);
-    ringMesh.visible = planetState.hasRings;
-    planetGroup.rotation.z = THREE.MathUtils.degToRad(planetState.tiltDegrees);
+      if (needTextureUpdate) {
+        if (sphereMat.map) sphereMat.map.dispose();
+        sphereMat.map = generateSurfaceTexture(planetState);
+        sphereMat.needsUpdate = true;
+      }
 
-    // Обновление оси вращения
-    axisGroup.visible = planetState.showAxis;
-    axisMat.color.set(planetState.axisColor);
-    poleMat.color.set(planetState.axisColor);
-    axisMat.opacity = planetState.axisOpacity;
-    poleMat.opacity = planetState.axisOpacity;
+      // Обновление атмосферы, колец, наклона и оси (срабатывает мгновенно без пересчета шума)
+      atmoMat.uniforms.glowColor.value.set(planetState.atmosphereColor);
+      ringMat.color.set(planetState.ringColor);
+      ringMesh.visible = planetState.hasRings;
+      planetGroup.rotation.z = THREE.MathUtils.degToRad(planetState.tiltDegrees);
 
-    axisLine.scale.y = planetState.axisLength;
-    northPole.position.y = planetState.axisLength / 2;
-    southPole.position.y = -planetState.axisLength / 2;
-};
+      axisGroup.visible = planetState.showAxis;
+      axisMat.color.set(planetState.axisColor);
+      poleMat.color.set(planetState.axisColor);
+      axisMat.opacity = planetState.axisOpacity;
+      poleMat.opacity = planetState.axisOpacity;
+
+      axisLine.scale.y = planetState.axisLength;
+      northPole.position.y = planetState.axisLength / 2;
+      southPole.position.y = -planetState.axisLength / 2;
+    };
 
 
 // 6. Адаптив и цикл рендера
