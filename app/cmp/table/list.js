@@ -1,20 +1,16 @@
 
 
 
-function PlanetCard(index, planet_name, star_name, esi, phi) {
+function PlanetCard(index, planet_name, star_name, esi) {
     let selected_class = "";
     if (index == 1) selected_class = " selected"
 
     let esi_class
-    let phi_class
 
     if (esi >= 0.8) esi_class = "good"
     else if (esi >= 0.5) esi_class = "normal"
     else esi_class = "bad"
 
-    if (phi >= 0.8) phi_class = "good"
-    else if (phi >= 0.5) phi_class = "normal"
-    else phi_class = "bad"
 
     return `
         <div class="planet-card d-flex align-items-center justify-content-between${selected_class}">
@@ -44,15 +40,6 @@ function PlanetCard(index, planet_name, star_name, esi, phi) {
                         ESI
                     </span>
                 </div>
-
-                <!-- <div class="phi d-flex flex-column align-items-center ${phi_class}">
-                    <span class="val">
-                        ${phi}
-                    </span>
-                    <span class="desc">
-                        PHI
-                    </span>
-                </div> -->
             </div>
         </div>
     `
@@ -68,6 +55,8 @@ var planets_limit = 10
 var planets;
 
 async function GetPlanets() {
+    // $(".planets-cards").append(PlanetCard(0, "test", "test", 1))
+
     const library = new ExoplanetLibrary({
         maxAttempts: 5,
         retryDelay: 1000,
@@ -75,7 +64,7 @@ async function GetPlanets() {
 
     try {
         await library.init();
-
+        
         planets = library.getPlanets({
             sort: {
                 by: "esi.simple",
@@ -86,8 +75,6 @@ async function GetPlanets() {
         });
 
         console.log("Каталог загружен:", planets);
-
-
         
         for (let i = 0; i < planets.length; i++) {
             const pl = planets[i];
