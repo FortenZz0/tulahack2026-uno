@@ -8,6 +8,37 @@ export class ExoplanetLibrary {
     #error = null;
     #listeners = new Map();
     #pendingRefresh = null;
+    #maxAttempts;
+    #retryDelay;
+
+    constructor({ maxAttempts = 5, retryDelay = 1000 } = {}) {
+        if (!Number.isInteger(maxAttempts) || maxAttempts < 1) {
+            throw new RangeError("maxAttempts must be a positive integer");
+        }
+
+        if (!Number.isFinite(retryDelay) || retryDelay < 0) {
+            throw new RangeError("retryDelay must be a non-negative number");
+        }
+
+        this.#maxAttempts = maxAttempts;
+        this.#retryDelay = retryDelay;
+    }
+
+    async #fetchWithRetry() {
+        for (let attempt = 1; attempt <= this.#maxAttempts; attempt++) {
+            try {
+                return await fetchPlanets();
+            } catch (error) {
+                if (attempt === this.#maxAttempts) {
+                    throw error;
+                }
+
+                const delay = this.#retryDelay * 2 ** (attempt - 1);
+
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
 
     get status() {
         return this.#status;
@@ -65,7 +96,7 @@ export class ExoplanetLibrary {
 
         this.#pendingRefresh = (async () => {
             try {
-                const planets = await fetchPlanets();
+                const planets = await this.#fetchWithRetry();
 
                 this.#planets = planets;
                 this.#lastUpdated = new Date();
