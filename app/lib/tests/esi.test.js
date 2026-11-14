@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
     calculateESIcomponent,
     calculateESI,
-    caluculateSimpleESI
+    calculateSimpleESI
 } from "../esi.js";
 
 
@@ -78,7 +78,7 @@ test("Full ESI: снижение при отклонении параметро�
 
 test("Simple ESI: параметры Земли", () => {
     assertAlmostEqual(
-        caluculateSimpleESI(1, 288),
+        calculateSimpleESI(1, 288),
         1
     );
 });
@@ -87,15 +87,15 @@ test("Simple ESI: известное значение", () => {
     const expected = (2 / 3) ** (0.57 / 2);
 
     assertAlmostEqual(
-        caluculateSimpleESI(2, 288),
+        calculateSimpleESI(2, 288),
         expected
     );
 });
 
 test("Simple ESI: влияние температуры", () => {
-    const earth = caluculateSimpleESI(1, 288);
-    const colder = caluculateSimpleESI(1, 200);
-    const muchColder = caluculateSimpleESI(1, 100);
+    const earth = calculateSimpleESI(1, 288);
+    const colder = calculateSimpleESI(1, 200);
+    const muchColder = calculateSimpleESI(1, 100);
 
     assert.ok(earth > colder);
     assert.ok(colder > muchColder);
@@ -108,7 +108,7 @@ test("Full и Simple ESI: диапазон результатов", () => {
                 radius, 5.51, 11.186, temperature
             );
 
-            const simple = caluculateSimpleESI(
+            const simple = calculateSimpleESI(
                 radius, temperature
             );
 

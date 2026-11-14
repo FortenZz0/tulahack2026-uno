@@ -28,7 +28,7 @@ function calculateESI(
 }
 
 
-function caluculateSimpleESI(
+function calculateSimpleESI(
     radius,
     eqt
 ) {
@@ -42,5 +42,5 @@ function caluculateSimpleESI(
 export {
     calculateESIcomponent,
     calculateESI,
-    caluculateSimpleESI
+    calculateSimpleESI
 };

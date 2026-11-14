@@ -8,7 +8,7 @@
     "build": "vite build --mode web",
     "preview": "vite preview --mode web",
 
-    "lib-test": "node --test app/lib/tests/esi.test.js"
+    "lib-test": "node --test app/lib/tests/*.test.js"
   },
   "devDependencies": {
     "glob": "^13.0.6",

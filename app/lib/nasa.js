@@ -1,5 +1,9 @@
-
 import { Planet } from "./types.js";
+import { 
+    calculateESI, 
+    calculateSimpleESI 
+} from "./esi.js";
+
 
 const NASA_API = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
 const QUERY = `
@@ -80,7 +84,7 @@ export async function fetchPlanets() {
             planet.radius > 0 &&
             planet.eqt > 0
         ) {
-            planet.esi.simple = caluculateSimpleESI(
+            planet.esi.simple = calculateSimpleESI(
                 planet.radius,
                 planet.eqt
             );
