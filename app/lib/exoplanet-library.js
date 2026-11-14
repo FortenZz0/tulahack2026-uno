@@ -36,8 +36,8 @@ export class ExoplanetLibrary {
         return this.#error;
     }
 
-    getPlanets() {
-        return [...this.#planets];
+    getPlanets(options = {}) {
+        return queryPlanets(this.#planets, options);
     }
 
     subscribe(event, callback) {
