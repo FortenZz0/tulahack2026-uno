@@ -45,3 +45,13 @@ main
     border-radius: var(--block-border-radius)
 
 
+.main-grid-container
+    height: 100%
+    display: grid
+
+    grid-template-columns: 1fr .8fr 1fr
+    grid-template-rows: 1fr 1fr 1fr
+    
+    grid-template-areas: "table vizual vizual" "table info stats" "table info stats"
+    
+    gap: 1.5rem

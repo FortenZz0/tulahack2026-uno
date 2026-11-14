@@ -1,22 +1,16 @@
-section.planet-visualization
-    height: 100%
+section.planet-info
     
-    .planet-info
-        // width: 100%
-        height: 40%   
-        
+    .planet-canvas
+        border-radius: 50%
+        height: 100%
+        background: #0f1626
+        overflow: hidden
+        scale: .82
 
-        .planet-canvas
-            border-radius: 50%
+        canvas
+            cursor: grab
+            width: 100%
             height: 100%
-            background: #0f1626
-            overflow: hidden
-            scale: .82
 
-            canvas
-                cursor: grab
-                width: 100%
-                height: 100%
-
-                &:active
-                    cursor: grabbing
+            &:active
+                cursor: grabbing

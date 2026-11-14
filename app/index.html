@@ -22,28 +22,30 @@
 
     {% include "./app/cmp/header/index.html" %}
 
+
     <main class="container-xl">
-        <div class="row h-100">
-            <section class="planets-list col-4">
-                <article class="block w-100 h-100">
-                    
-                </article>
+        <div class="main-grid-container">
+
+            <section class="block" style="grid-area: table">
+
             </section>
 
-            <section class="planet-visualization col-8 d-flex flex-column gap-4">
-                <article class="planet-info block d-flex w-100">
-                    <div class="h-100">
-                        <div class="planet-canvas h-100">
-                            {% include "./app/cmp/canvas/index.html" %}
-                        </div>
+            <section class="block planet-info block d-flex w-100" style="grid-area: vizual">
+                <div class="h-100">
+                    <div class="planet-canvas h-100">
+                        {% include "./app/cmp/canvas/index.html" %}
                     </div>
-                </article>
-
-                <div class="d-flex h-100 w-100 gap-4">
-                    <article class="w-50 h-100 block"></article>
-                    <article class="w-50 h-100 block"></article>
                 </div>
             </section>
+
+            <section class="block" style="grid-area: info">
+
+            </section>
+
+            <section class="block" style="grid-area: stats">
+
+            </section>
+
         </div>
     </main>
 

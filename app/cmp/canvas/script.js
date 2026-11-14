@@ -416,4 +416,4 @@ const resizeObserver = new ResizeObserver((entries) => {
 });
 
 // Запускаем слежение за родительским тегом
-resizeObserver.observe(container);
+// resizeObserver.observe(container);
