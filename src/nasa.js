@@ -1,0 +1,178 @@
+import { Planet } from "./planet.js";
+import { calculateESI, calculateSimpleESI } from "./esi.js";
+import {
+    calculateHabitableZone,
+    calculateHabitableTimeFraction,
+} from "./habitable-zone.js";
+
+
+/* Парсеры */
+function parseNumber(value) {
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+}
+
+function parsePositiveNumber(value) {
+    const number = parseNumber(value);
+    return number !== null && number > 0 ? number : null;
+}
+
+function parseNonNegativeNumber(value) {
+    const number = parseNumber(value);
+    return number !== null && number >= 0 ? number : null;
+}
+
+function parseEccentricity(value) {
+    const number = parseNumber(value);
+
+    return number !== null && number >= 0 && number < 1
+        ? number
+        : null;
+}
+
+function parseName(value) {
+    return typeof value === "string" && value.trim()
+        ? value.trim()
+        : null;
+}
+
+
+
+/* ПРОИЗВОДНЫЕ */
+
+export function classifyPlanet(radius) {
+    if (
+        typeof radius !== "number" ||
+        !Number.isFinite(radius) ||
+        radius <= 0
+    ) {
+        return null;
+    }
+
+    if (radius < 0.5) return "MINI";
+    if (radius < 1.0) return "terrestrial";
+    if (radius < 1.75) return "super-earth";
+    if (radius < 3.5) return "sub-neptune";
+    if (radius < 6.0) return "neptune";
+    if (radius <= 14.3) return "jupiter";
+
+    return "MEGA";
+}
+
+export function createPlanet(row) {
+    const planet = new Planet();
+
+    planet.name = parseName(row.pl_name);
+
+    planet.mass = parsePositiveNumber(row.pl_bmasse);
+    planet.radius = parsePositiveNumber(row.pl_rade);
+    planet.density = parsePositiveNumber(row.pl_dens);
+    planet.eqt = parsePositiveNumber(row.pl_eqt);
+    planet.flux = parseNonNegativeNumber(row.pl_insol);
+
+    planet.star.name = parseName(row.hostname);
+    planet.star.temperature = parsePositiveNumber(row.st_teff);
+
+    const logLuminosity = parseNumber(row.st_lum);
+
+    if (logLuminosity !== null) {
+        const luminosity = 10 ** logLuminosity;
+
+        planet.star.luminosity =
+            Number.isFinite(luminosity) && luminosity > 0
+                ? luminosity
+                : null;
+    }
+
+    planet.orbit.semiMajorAxis =
+        parsePositiveNumber(row.pl_orbsmax);
+
+    planet.orbit.eccentricity =
+        parseEccentricity(row.pl_orbeccen);
+
+    planet.orbit.period =
+        parsePositiveNumber(row.pl_orbper);
+
+    if (planet.mass !== null && planet.radius !== null) {
+        planet.vesc = 11.186 * Math.sqrt(
+            planet.mass / planet.radius
+        );
+    }
+
+    if (
+        planet.radius !== null &&
+        planet.density !== null &&
+        planet.vesc !== null &&
+        planet.eqt !== null
+    ) {
+        planet.esi.full = calculateESI(
+            planet.radius,
+            planet.density,
+            planet.vesc,
+            planet.eqt
+        );
+    }
+
+    if (planet.radius !== null && planet.flux !== null) {
+        planet.esi.simple = calculateSimpleESI(
+            planet.radius,
+            planet.flux
+        );
+    }
+
+    const temperature = planet.star.temperature;
+    const luminosity = planet.star.luminosity;
+
+    if (
+        temperature !== null &&
+        temperature >= 2600 &&
+        temperature <= 7200 &&
+        luminosity !== null
+    ) {
+        const zone = calculateHabitableZone(
+            temperature,
+            luminosity
+        );
+
+        if (zone !== null) {
+            planet.habitableZone = zone;
+
+            const semiMajorAxis = planet.orbit.semiMajorAxis;
+            const eccentricity = planet.orbit.eccentricity;
+
+            if (
+                semiMajorAxis !== null &&
+                eccentricity !== null
+            ) {
+                const fraction = calculateHabitableTimeFraction(
+                    semiMajorAxis,
+                    eccentricity,
+                    zone
+                );
+
+                if (fraction !== null) {
+                    planet.habitableTimeFraction = fraction;
+                }
+            }
+        }
+    }
+
+    planet.classification.sizeClass =
+        classifyPlanet(planet.radius);
+
+    return planet;
+}
+
+export function parseNASAPlanets(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        throw new TypeError(
+            "NASA returned an empty or invalid catalog"
+        );
+    }
+
+    return rows.map(createPlanet);
+}
