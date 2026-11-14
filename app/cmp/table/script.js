@@ -1,6 +1,7 @@
 var label = $(".search-field")
 var input = $("#search")
 var placeholder = $(".search-field .placeholder")
+var planets_scrollbox = $(".planets-cards")
 
 input.on("focus", () => {
     label.addClass("focused")
@@ -10,8 +11,6 @@ input.on("focusout", () => {
     if (input.val()) return;
     label.removeClass("focused")
 })
-
-
 
 
 document.querySelectorAll(".planets-list .checkbox").forEach((selector) => {
@@ -27,3 +26,5 @@ document.querySelectorAll(".planets-list .checkbox").forEach((selector) => {
         });
     });
 });
+
+

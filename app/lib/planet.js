@@ -11,6 +11,7 @@ export class Planet {
     flux = null;
 
     star = {
+        name: null,
         temperature: null,
         luminosity: null,
     };

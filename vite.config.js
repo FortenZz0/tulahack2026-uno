@@ -75,6 +75,13 @@ export default defineConfig((command) => {
         // mobile port - 8082
         port: 8080,
         strictPort: true,
+        proxy: {
+            "/api/nasa": {
+                target: "https://exoplanetarchive.ipac.caltech.edu",
+                changeOrigin: true,
+                rewrite: path => path.replace(/^\/api\/nasa/, "/TAP/sync"),
+            },
+        },
         watch: {
             usePolling: true
         }

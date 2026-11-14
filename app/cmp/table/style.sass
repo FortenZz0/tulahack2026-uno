@@ -1,4 +1,8 @@
 section.table
+    display: flex
+    flex-direction: column
+    min-height: 0
+
     .search-field
         background: var(--color-block-background-2)
         border-radius: 10px
@@ -87,14 +91,35 @@ section.table
                 color: var(--color-accent-1)
     
 
-    .planets-list
+    .planets-cards
         --card-height: 60px
+        flex: 1 1 0
+        min-height: 0
+        overflow-y: auto
+        scrollbar-width: thin
+        scrollbar-color: var(--color-accent-1) var(--color-block-background)
+        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
 
-        height: var(--card-height)
+        &::-webkit-scrollbar
+            width: 8px
+
+        &::-webkit-scrollbar-track
+            background: var(--color-block-background)
+            border-radius: 4px
+
+        &::-webkit-scrollbar-thumb
+            background: var(--color-accent-1)
+            border-radius: 4px
+
+            &:hover
+                background: var(--color-text-2)
 
         .planet-card
-            height: 100%
+            height: var(--card-height)
             cursor: pointer
+            position: relative
+            margin-bottom: 30px
             
 
             .index
@@ -111,6 +136,9 @@ section.table
             
             .name
                 h5
+                    font-size: 18px
+                    white-space: nowrap
+                    text-overflow: ellipsis
                     letter-spacing: 3px
                     transition: 0.3s ease-in-out
                 span
@@ -120,6 +148,8 @@ section.table
             
             .values
                 & > div
+                    width: 44px
+
                     .desc
                         font-size: 12px
                     
@@ -151,4 +181,14 @@ section.table
                 .name
                     h5
                         color: var(--color-accent-1)
-
+            
+            &::after
+                content: ''
+                position: absolute
+                bottom: -15px
+                height: 1px
+                left: 0
+                right: 0
+                background: var(--color-block-border)
+                opacity: 0.5
+                pointer-events: none

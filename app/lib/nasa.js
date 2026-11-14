@@ -5,10 +5,11 @@ import {
     calculateHabitableTimeFraction,
 } from "./habitable-zone.js";
 
-const NASA_URL = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
+const NASA_URL = "/api/nasa";
 
 const FIELDS = [
     "pl_name",
+    "hostname",
     "pl_rade",
     "pl_bmasse",
     "pl_dens",
@@ -65,6 +66,7 @@ function createPlanet(row) {
     planet.eqt = parsePositiveNumber(row.pl_eqt);
     planet.flux = parseNonNegativeNumber(row.pl_insol);
 
+    planet.star.name = parseName(row.hostname);
     planet.star.temperature = parsePositiveNumber(row.st_teff);
 
     const logLuminosity = parseNumber(row.st_lum);
@@ -151,7 +153,10 @@ function createPlanet(row) {
 
 export async function fetchPlanets() {
     const query = `SELECT ${FIELDS.join(", ")} FROM pscomppars`;
-    const url = new URL(NASA_URL);
+    const url = new URL(
+        NASA_URL,
+        globalThis.location?.origin ?? "http://localhost"
+    );
 
     url.searchParams.set("query", query);
     url.searchParams.set("format", "json");

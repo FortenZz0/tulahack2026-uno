@@ -67,7 +67,7 @@ test("Запрос содержит pl_insol и таблицу pscomppars", asyn
     let requestedUrl;
 
     globalThis.fetch = async url => {
-        requestedUrl = new URL(url.toString());
+        requestedUrl = new URL(url.toString(), "http://localhost");
 
         return {
             ok: true,
@@ -81,6 +81,7 @@ test("Запрос содержит pl_insol и таблицу pscomppars", asyn
 
         const query = requestedUrl.searchParams.get("query");
 
+        assert.equal(requestedUrl.pathname, "/api/nasa");
         assert.match(query, /FROM pscomppars/);
         assert.match(query, /pl_insol/);
         assert.match(query, /pl_name/);
