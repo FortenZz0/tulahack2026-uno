@@ -1,4 +1,4 @@
-const NASA_URL = 
+const NASA_URL =
     "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
 
 const FIELDS = [
@@ -16,7 +16,7 @@ const FIELDS = [
     "pl_orbper"
 ];
 
-const STORAGE_KEY = "planets.json";
+const STORAGE_KEY = "planets-test.json";
 
 // из базы НАСА
 async function updatePlanets(env) {
@@ -71,35 +71,64 @@ export default {
             });
         }
 
-        const object = await env.PLANETS_BUCKET.get(STORAGE_KEY);
+        if (request.method !== "GET") {
+            return new Response("Method Not Allowed", {
+                status: 405,
+                headers: {
+                    "Allow": "GET"
+                }
+            });
+        }
 
-        if (object === null) {
+        // клиент сможет распарсить наконец-то!
+        const headers = {
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-store"
+        };
+
+        try {
+            const object = await env.PLANETS_BUCKET.get(STORAGE_KEY);
+
+            if (object !== null) {
+                return new Response(object.body, {
+                    headers: {
+                        ...headers,
+                        "Content-Type": "application/json"
+                    }
+                });
+            }
+
+            console.log("Каталог пуст, загружунькаем данные с NASA");
+
+            const data = await updatePlanets(env);
+
+            return Response.json(data, {
+                headers
+            });
+        } catch (error) {
+            console.error("Не удалось получить каталог планет: ", error);
+
             return Response.json(
                 { error: "Каталог экзопланет пока не доступен😂😂😂.." },
-                { status: 503 }
+                {
+                    status: 503,
+                    headers
+                }
             );
         }
-        
-        // клиент сможет распарсить наконец-то!
-        return new Response(object.body, {
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            }
-        });
     },
 
     async scheduled(event, env, ctx) {
         console.log("актуализируем каталог...");
         ctx.waitUntil(
             updatePlanets(env)
-            .then(() => {
-                console.log("успешно актуализировали каталог...")
-            })
-            .catch((error) => {
-                console.error("актуализация провалена: ", error);
-                throw error;
-            })
+                .then(() => {
+                    console.log("успешно актуализировали каталог...")
+                })
+                .catch((error) => {
+                    console.error("актуализация провалена: ", error);
+                    throw error;
+                })
         )
     }
 };
