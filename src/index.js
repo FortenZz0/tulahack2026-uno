@@ -16,7 +16,7 @@ const FIELDS = [
     "pl_orbper"
 ];
 
-const STORAGE_KEY = "planets-test.json";
+const STORAGE_KEY = "planets.json";
 
 // из базы НАСА
 async function updatePlanets(env) {
@@ -46,7 +46,7 @@ async function updatePlanets(env) {
         planets
     };
 
-    await env.PLANETS_BUCKET.put(
+    await env.PLANETS_KV.put(
         STORAGE_KEY,
         JSON.stringify(data),
         {
@@ -87,7 +87,7 @@ export default {
         };
 
         try {
-            const object = await env.PLANETS_BUCKET.get(STORAGE_KEY);
+            const object = await env.PLANETS_KV.get(STORAGE_KEY);
 
             if (object !== null) {
                 return new Response(object.body, {

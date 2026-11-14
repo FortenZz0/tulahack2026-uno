@@ -9,10 +9,10 @@
   },
 
   // храним ответ NASA
-  "r2_buckets": [
+  "kv_namespaces": [
     {
-      "binding": "PLANETS_BUCKET",
-      "bucket_name": "tulahack-planets"
+      "binding": "PLANETS_KV",
+      "id": "a78a4806f59543a6b7156158e920d95e"
     }
   ]
 }
