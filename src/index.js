@@ -93,7 +93,7 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
 
-        if (url.pathname !== "/planets" || url.pathname !== "/preview") {
+        if (url.pathname !== "/planets" && url.pathname !== "/preview") {
             return new Response("Not Found", {
                 status: 404
             });
