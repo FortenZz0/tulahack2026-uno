@@ -26,17 +26,11 @@
     <main class="container-xl">
         <div class="main-grid-container">
 
-            <section class="block p-4" style="grid-area: table">
-                <span class="d-block m-0 mb-2 accent">
-                    Рейтинг ESI / PHI
-                </span>
-
-                <h1 class="m-0" id="vizual-planet-name">
-                    Топ 50 планет
-                </h1>
+            <section class="block p-4 table m-0" style="grid-area: table">
+                {% include "./app/cmp/table/index.html" %}
             </section>
 
-            <section class="block planet-info d-flex w-100" style="grid-area: vizual">
+            <section class="block vizual planet-info d-flex w-100" style="grid-area: vizual">
                 {% include "./app/cmp/canvas/index.html" %}
 
                 <div class="content p-4 ps-1 w-100">
@@ -56,11 +50,11 @@
                 </div>
             </section>
 
-            <section class="block" style="grid-area: info">
+            <section class="block info" style="grid-area: info">
 
             </section>
 
-            <section class="block" style="grid-area: stats">
+            <section class="block stats" style="grid-area: stats">
 
             </section>
 
