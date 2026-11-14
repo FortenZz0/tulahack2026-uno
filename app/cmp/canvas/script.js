@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 
+
+
 // ==========================================
 // НАСТРОЙКИ ВНЕШНЕГО ВИДА ПЛАНЕТЫ
 // ==========================================
@@ -12,11 +14,11 @@ const planetState = {
     hasRings: false,             // Показывать ли кольца (true / false)
     ringColor: '#a1c4fd',       // Цвет колец
     rotationSpeed: 0.003,       // Скорость автовращения
-    tiltDegrees: 29.5,             // Наклон оси в градусах
+    tiltDegrees: -18,             // Наклон оси в градусах
     showAxis: true,             // Показывать ли ось вращения (true / false)
     axisColor: '#abbeba',       // Цвет линии и маркеров полюсов
-    axisLength: 100,            // Длина оси (диаметр планеты равен 2.0)
-    axisOpacity: 0.25           // Прозрачность оси (от 0.1 до 1.0)
+    axisLength: 1000,            // Длина оси (диаметр планеты равен 2.0)
+    axisOpacity: 0.2            // Прозрачность оси (от 0.1 до 1.0)
 };
 
 
@@ -31,13 +33,13 @@ const scene = new THREE.Scene();
 const initWidth = container.clientWidth || 300;
 const initHeight = container.clientHeight || 300;
 
-const camera = new THREE.PerspectiveCamera(45, initWidth / initHeight, 0.1, 100);
-camera.position.set(0, 0.5, 3.8);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+camera.position.set(0, 0, 4);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 // Третий параметр false важен: он запрещает Three.js жестко перезаписывать style.width и style.height в пикселях
-renderer.setSize(initWidth, initHeight, false);
+renderer.setSize(initHeight, initHeight, false);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 // ... весь ваш код генерации текстуры, планеты, оси и управления мышью остается без изменений ...
@@ -100,12 +102,27 @@ function hexToRgb(hex) {
   return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
 }
 
+// Вспомогательная функция плавного перехода (убирает пиксельные лесенки)
+function smoothstep(edge0, edge1, x) {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+// Смешивание двух RGB-цветов (исправлено с индексами, [1], [2])
+function mixRgb(c1, c2, t) {
+  return [
+    Math.round(c1[0] + (c2[0] - c1[0]) * t),
+    Math.round(c1[1] + (c2[1] - c1[1]) * t),
+    Math.round(c1[2] + (c2[2] - c1[2]) * t)
+  ];
+}
+
 // ==========================================
-// 2. ОБНОВЛЕННЫЙ ГЕНЕРАТОР ТЕКСТУРЫ
+// ИСПРАВЛЕННЫЙ ЧЁТКИЙ ГЕНЕРАТОР ТЕКСТУРЫ
 // ==========================================
 function generateSurfaceTexture(config) {
-  const width = 800;
-  const height = 800;
+  const width = 512;
+  const height = 512;
   const texCanvas = document.createElement('canvas');
   texCanvas.width = width;
   texCanvas.height = height;
@@ -119,68 +136,76 @@ function generateSurfaceTexture(config) {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = config.detailColor;
-    for (let i = 0; i < 20; i++) {
-      ctx.globalAlpha = 0.08 + Math.random() * 0.2;
-      ctx.fillRect(0, Math.random() * height, width, 3 + Math.random() * 16);
+    for (let i = 0; i < 18; i++) {
+      const y = Math.random() * height;
+      const bandH = 6 + Math.random() * 24;
+      const bandGrad = ctx.createLinearGradient(0, y, 0, y + bandH);
+      bandGrad.addColorStop(0, 'transparent');
+      bandGrad.addColorStop(0.5, config.detailColor);
+      bandGrad.addColorStop(1, 'transparent');
+
+      ctx.globalAlpha = 0.1 + Math.random() * 0.22;
+      ctx.fillStyle = bandGrad;
+      ctx.fillRect(0, y, width, bandH);
     }
-    return new THREE.CanvasTexture(texCanvas);
-  }
+  } else {
+    const imgData = ctx.createImageData(width, height);
+    const data = imgData.data;
 
-  // Генерация континентов по 3D-шуму
-  const imgData = ctx.createImageData(width, height);
-  const data = imgData.data;
+    const cOcean = hexToRgb(config.primaryColor);
+    const cDeep = hexToRgb(config.secondaryColor);
+    const cLand = hexToRgb(config.detailColor);
+    
+    // Цвет береговой каймы (смешиваем цвет океана с белым на 25%)
+    const cShore = mixRgb(cOcean, [255, 255, 255], 0.25);
+    const seed = Math.random() * 100;
 
-  const cOcean = hexToRgb(config.primaryColor);
-  const cDeep = hexToRgb(config.secondaryColor);
-  const cLand = hexToRgb(config.detailColor);
-  const seed = Math.random() * 100; // Сдвиг для нового рисунка при каждом вызове
+    for (let y = 0; y < height; y++) {
+      const phi = (y / height) * Math.PI;
+      const sinPhi = Math.sin(phi);
+      const cosPhi = Math.cos(phi);
 
-  for (let y = 0; y < height; y++) {
-    const v = y / height;
-    const phi = v * Math.PI; // Угол от северного полюса до южного
+      for (let x = 0; x < width; x++) {
+        const theta = (x / width) * Math.PI * 2;
 
-    for (let x = 0; x < width; x++) {
-      const u = x / width;
-      const theta = u * Math.PI * 2; // Угол вокруг экватора
+        const nx = sinPhi * Math.cos(theta);
+        const ny = cosPhi;
+        const nz = sinPhi * Math.sin(theta);
 
-      // Переводим пиксель текстуры в точку на 3D-сфере
-      const nx = Math.sin(phi) * Math.cos(theta);
-      const ny = Math.cos(phi);
-      const nz = Math.sin(phi) * Math.sin(theta);
+        const scale = 1.9;
+        const n = fbm(nx * scale + seed, ny * scale + seed, nz * scale + seed);
 
-      // Вычисляем высоту рельефа (scale = 2.2 задает размер материков)
-      const scale = 2.2;
-      const n = fbm(nx * scale + seed, ny * scale + seed, nz * scale + seed);
+        // 1. Плавный градиент глубины океана
+        const depthFactor = smoothstep(-0.35, -0.02, n);
+        let color = mixRgb(cDeep, cOcean, depthFactor);
 
-      const idx = (y * width + x) * 4;
-      let r, g, b;
+        // 2. Мягкая береговая линия
+        const shoreFactor = smoothstep(-0.035, -0.01, n);
+        color = mixRgb(color, cShore, shoreFactor);
 
-      if (n > 0.03) {
-        // Суша (материки и острова)
-        r = cLand[0]; g = cLand[1]; b = cLand[2];
-      } else if (n > -0.04) {
-        // Мелководье / береговая кайма (чуть светлее океана)
-        r = Math.min(255, cOcean[0] + 25);
-        g = Math.min(255, cOcean[1] + 25);
-        b = Math.min(255, cOcean[2] + 25);
-      } else {
-        // Глубокий океан (плавный переход между primaryColor и secondaryColor)
-        const depth = Math.min(1, Math.abs(n + 0.04) * 2.5);
-        r = lerp(cOcean[0], cDeep[0], depth);
-        g = lerp(cOcean[1], cDeep[1], depth);
-        b = lerp(cOcean[2], cDeep[2], depth);
+        // 3. Чёткий, но сглаженный край суши
+        const landFactor = smoothstep(0.005, 0.02, n);
+        color = mixRgb(color, cLand, landFactor);
+
+        // Записываем каналы R, G, B и Alpha
+        const idx = (y * width + x) * 4;
+        data[idx] = color[0];
+        data[idx + 1] = color[1];
+        data[idx + 2] = color[2];
+        data[idx + 3] = 255;
       }
-
-      data[idx] = r;
-      data[idx + 1] = g;
-      data[idx + 2] = b;
-      data[idx + 3] = 255;
     }
+    ctx.putImageData(imgData, 0, 0);
   }
 
-  ctx.putImageData(imgData, 0, 0);
-  return new THREE.CanvasTexture(texCanvas);
+  const texture = new THREE.CanvasTexture(texCanvas);
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+
+  return texture;
 }
 
 // 3. Сборка планеты
@@ -247,7 +272,7 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 let isDragging = false;
 let prevMouse = { x: 0, y: 0 };
 let velocity = { x: 0, y: 0 };
-let targetZoom = 3.8;
+let targetZoom = 4.25;
 
 canvas.addEventListener('pointerdown', (e) => {
     isDragging = true;
@@ -269,7 +294,7 @@ window.addEventListener('pointermove', (e) => {
 
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    targetZoom = Math.max(2.0, Math.min(7.0, targetZoom + e.deltaY * 0.002));
+    targetZoom = Math.max(1.75, Math.min(7.0, targetZoom + e.deltaY * 0.002));
 }, { passive: false });
 
 
