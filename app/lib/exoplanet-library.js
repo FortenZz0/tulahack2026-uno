@@ -1,4 +1,6 @@
 import { fetchPlanets } from "./nasa.js";
+import { queryPlanets } from "./planet-query.js";
+
 
 export class ExoplanetLibrary {
     #planets = [];
