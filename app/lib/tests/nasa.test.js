@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { fetchPlanets } from "../nasa.js";
-import { Planet } from "../types.js";
+import { Planet } from "../planet.js";
 
 
 function mockFetch(t, data, status = 200) {

@@ -1,4 +1,4 @@
-import { Planet } from "./types.js";
+import { Planet } from "./planet.js";
 import { 
     calculateESI, 
     calculateSimpleESI 
