@@ -45,14 +45,14 @@ function PlanetCard(index, planet_name, star_name, esi, phi) {
                     </span>
                 </div>
 
-                <div class="phi d-flex flex-column align-items-center ${phi_class}">
+                <!-- <div class="phi d-flex flex-column align-items-center ${phi_class}">
                     <span class="val">
                         ${phi}
                     </span>
                     <span class="desc">
                         PHI
                     </span>
-                </div>
+                </div> -->
             </div>
         </div>
     `

@@ -1,7 +1,7 @@
 var label = $(".search-field")
 var input = $("#search")
 var placeholder = $(".search-field .placeholder")
-var planets_scrollbox = $(".planets-cards")
+var planets_scrollbox = $(".scrollbox")
 
 
 $(document).ready(() => {
