@@ -4,7 +4,7 @@ body
 
     &.color-sheme-1_black
         --color-background:        #070913
-        --color-accent-1           #ADA0FF
+        --color-accent-1:          #ADA0FF
         --color-text-1:            #FFFFFF
         --color-text-2:            #8090B3
 
@@ -35,6 +35,12 @@ span
     color: var(--color-text-2)
     letter-spacing: 3px
 
+    i
+        color: var(--color-accent-1)
+    
+    &.accent
+        color: var(--color-accent-1)
+
 main
     height: calc(100vh - var(--header-height))
     padding-top: var(--main-padding-y)
@@ -51,9 +57,9 @@ main
     height: 100%
     display: grid
 
-    grid-template-columns: 1fr .8fr 1fr
-    grid-template-rows: 1fr 1fr 1fr
+    grid-template-columns: 1fr .8fr .8fr
+    grid-template-rows: 1fr 1fr
     
-    grid-template-areas: "table vizual vizual" "table info stats" "table info stats"
+    grid-template-areas: "table vizual vizual" "table info stats"
     
     gap: 1.5rem
