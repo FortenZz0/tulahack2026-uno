@@ -24,6 +24,18 @@ export class Planet {
         simple: null
     };
 
-    habitableZone = null;
-    habitableTimeFraction = null;
+    habitableZone = {
+        conservative: {
+            inner: null,
+            outer: null
+        },
+        optimistic: {
+            inner: null,
+            outer: null
+        }
+    };
+    habitableTimeFraction = {
+        conservative: null,
+        optimistic: null
+    };
 }
