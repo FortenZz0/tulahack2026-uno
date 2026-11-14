@@ -98,8 +98,21 @@ section.table
         overflow-y: auto
         scrollbar-width: thin
         scrollbar-color: var(--color-accent-1) var(--color-block-background)
-        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
-        mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+
+        transition: 0.4s ease-in-out
+
+        // -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+        // mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+
+        &.scroll-top
+            -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+            mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+        &.scroll-mid
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%)
+            mask-image: linear-gradient(to bottom, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%)
+        &.scroll-bot
+            -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 48px), transparent 100%)
+            mask-image: linear-gradient(to top, #000 calc(100% - 48px), transparent 100%)
 
         &::-webkit-scrollbar
             width: 8px

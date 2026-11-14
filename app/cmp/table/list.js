@@ -124,8 +124,6 @@ $(document).ready(() => {
     GetPlanets();
 
     
-
-    
 })
 
 
