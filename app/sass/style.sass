@@ -87,3 +87,43 @@ main
         transform: translate(-50%, -50%) rotate(0deg)
     to
         transform: translate(-50%, -50%) rotate(360deg)
+
+
+
+
+.scrollbox
+    --card-height: 60px
+    flex: 1 1 0
+    min-height: 0
+    overflow-y: auto
+    scrollbar-width: thin
+    scrollbar-color: var(--color-accent-1) var(--color-block-background)
+
+    transition: 0.4s ease-in-out
+
+    // -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+    // mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+
+    &.scroll-top
+        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent 100%)
+    &.scroll-mid
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%)
+        mask-image: linear-gradient(to bottom, transparent 0, #000 48px, #000 calc(100% - 48px), transparent 100%)
+    &.scroll-bot
+        -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 48px), transparent 100%)
+        mask-image: linear-gradient(to top, #000 calc(100% - 48px), transparent 100%)
+
+    &::-webkit-scrollbar
+        width: 8px
+
+    &::-webkit-scrollbar-track
+        background: var(--color-block-background)
+        border-radius: 4px
+
+    &::-webkit-scrollbar-thumb
+        background: var(--color-accent-1)
+        border-radius: 4px
+
+        &:hover
+            background: var(--color-text-2)
