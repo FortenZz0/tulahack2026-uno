@@ -3,6 +3,19 @@
   "main": "src/index.js",
   "compatibility_date": "2026-11-14",
 
+  "rules": [
+    { "type": "Text", "globs": ["**/*.prompt.md"], "fallthrough": true }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "DESCRIPTION_GENERATOR", "class_name": "DescriptionGenerator" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1-descriptions", "new_sqlite_classes": ["DescriptionGenerator"] }
+  ],
+
   // обновление каждые 10 минут
   "triggers": {
     "crons": ["*/10 * * * *"]

@@ -4,7 +4,7 @@
   "description": "Cloudflare Worker для доступа к NASA Exoplanet Archive API.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test"
   },
   "repository": {
     "type": "git",

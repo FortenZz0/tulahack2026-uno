@@ -1,4 +1,7 @@
 import { parseNASAPlanets, NASA_FIELDS } from "./nasa.js";
+import { getDescription, readDescription } from "./ai/descriptions.js";
+
+export { DescriptionGenerator } from "./ai/descriptions.js";
 
 const NASA_URL =
     "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
@@ -115,7 +118,7 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
 
-        if (!["/planets", "/stars", "/preview", "/full"].includes(url.pathname)) {
+        if (!["/planets", "/stars", "/preview", "/full", "/desc"].includes(url.pathname)) {
             return new Response("Not Found", {
                 status: 404
             });
@@ -137,6 +140,21 @@ export default {
         };
 
         try {
+            const descriptionId = url.pathname === "/desc"
+                ? url.searchParams.get("id")?.trim()
+                : null;
+
+            if (url.pathname === "/desc") {
+                if (!descriptionId) {
+                    return Response.json({ error: "Параметр id обязателен" }, { status: 400, headers });
+                }
+
+                const cached = await readDescription(env, descriptionId);
+                if (cached !== null) {
+                    return Response.json(cached, { headers });
+                }
+            }
+
             if (url.pathname === "/planets" || url.pathname === "/stars") {
                 const field = url.pathname === "/planets" ? "planets" : "stars";
                 const key = field === "planets" ? STORAGE_KEY : STARS_KEY;
@@ -160,26 +178,37 @@ export default {
                 env.PLANETS_KV.get(STARS_KEY, "json")
             ]);
 
+            let data;
             if (!isCurrentPart(cachedPlanets, "planets") ||
                 !isCurrentPart(cachedStars, "stars")) {
                 console.log("Каталог пуст, загружунькаем данные с NASA");
-                const data = await updatePlanets(env);
+                data = await updatePlanets(env);
+            } else {
+                if (cachedPlanets.updatedAt !== cachedStars.updatedAt) {
+                    throw new Error("Planet and star catalog timestamps do not match");
+                }
 
-                return Response.json(
-                    url.pathname === "/preview" ? createPreviewData(data) : data,
-                    { headers }
-                );
+                data = {
+                    updatedAt: cachedPlanets.updatedAt,
+                    planets: cachedPlanets.planets,
+                    stars: cachedStars.stars
+                };
             }
 
-            if (cachedPlanets.updatedAt !== cachedStars.updatedAt) {
-                throw new Error("Planet and star catalog timestamps do not match");
-            }
+            if (url.pathname === "/desc") {
+                const planet = data.planets.find(planet => planet.id === descriptionId);
+                if (!planet) {
+                    return Response.json({ error: "Планета не найдена" }, { status: 404, headers });
+                }
 
-            const data = {
-                updatedAt: cachedPlanets.updatedAt,
-                planets: cachedPlanets.planets,
-                stars: cachedStars.stars
-            };
+                const star = data.stars.find(star => star.id === planet.starId) ?? null;
+                // Звезда общая для нескольких планет: её описание тоже создаётся один раз.
+                if (star !== null) {
+                    await getDescription(env, "star", null, star);
+                }
+                const description = await getDescription(env, "planet", planet, star);
+                return Response.json(description, { headers });
+            }
 
             return Response.json(
                 url.pathname === "/preview" ? createPreviewData(data) : data,
@@ -189,7 +218,9 @@ export default {
             console.error("Не удалось получить каталог планет: ", error);
 
             return Response.json(
-                { error: "Каталог экзопланет пока не доступен😂😂😂.." },
+                { error: url.pathname === "/desc"
+                    ? "Описание планеты пока недоступно"
+                    : "Каталог экзопланет пока не доступен😂😂😂.." },
                 {
                     status: 503,
                     headers
