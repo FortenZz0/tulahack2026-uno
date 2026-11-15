@@ -40,15 +40,17 @@ $(document).ready(() => {
             scrollClass = "scroll-bot";
         }
 
-        planets_scrollbox
+        $(element)
             .removeClass("scroll-top scroll-mid scroll-bot")
-            .addClass(scrollClass);
+            .addClass(maxScrollTop > 0 ? scrollClass : "");
     };
 
     planets_scrollbox.on("scroll", (event) => {
         updateScrollPosition(event.currentTarget);
     });
-    updateScrollPosition(planets_scrollbox[0]);
+    planets_scrollbox.each((index, element) => {
+        updateScrollPosition(element);
+    });
 })
 
 

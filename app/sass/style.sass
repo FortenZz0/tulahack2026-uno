@@ -57,14 +57,203 @@ main
     height: 100%
     display: grid
 
-    grid-template-columns: 1fr .8fr .8fr
-    grid-template-rows: 1fr 1fr
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr)
+    grid-template-rows: minmax(0, 1fr)
     
-    grid-template-areas: "table vizual vizual" "table info stats"
+    grid-template-areas: "table explorer"
     
     gap: 1.5rem
 
+.planet-workspace
+    grid-area: explorer
+    display: flex
+    flex-direction: column
+    min-width: 0
+    min-height: 0
+    gap: 1rem
 
+    > .planet-info
+        flex: 1 1 0
+
+    > .planet-panel
+        flex: 0 0 164px
+        padding: 0 1.25rem 1rem
+        transition: flex-basis .6s ease-in-out
+
+    &.details-expanded
+        > .planet-panel
+            flex-basis: 70%
+
+        .planet-info
+            .content
+                padding: .75rem 1.25rem !important
+
+            h1
+                font-size: 1.5rem !important
+
+.planet-panel-toggle
+    display: flex
+    align-items: center
+    justify-content: center
+    align-self: center
+    flex-shrink: 0
+    gap: .5rem
+    min-height: 44px
+    padding: .5rem 1rem
+    border: 0
+    background: transparent
+    cursor: pointer
+
+    span
+        font-size: .75rem
+        letter-spacing: .04em
+        color: var(--color-accent-1)
+
+    svg
+        fill: none
+        stroke: var(--color-accent-1)
+        stroke-width: 2
+        transition: transform .3s ease
+
+    &[aria-expanded="true"] svg
+        transform: rotate(180deg)
+
+    &:hover
+        background: var(--color-block-background-2)
+
+    &:focus-visible
+        outline: 2px solid var(--color-accent-1)
+        outline-offset: -2px
+        border-radius: 8px
+
+.planet-summary
+    flex-shrink: 0
+    padding: .5rem 0 1rem
+
+    .planet-highlights
+        display: grid
+        grid-template-columns: repeat(4, minmax(0, 1fr))
+        gap: .75rem
+
+        dt
+            color: var(--color-text-2)
+            font-size: .75rem
+            font-weight: 400
+            overflow-wrap: anywhere
+
+        dd
+            margin: .4rem 0 0
+            min-width: 0
+            overflow-wrap: anywhere
+            color: #46EE71
+            font-size: 1.1rem
+            font-weight: 500
+
+            span
+                font-size: .8rem
+                letter-spacing: normal
+
+@media (prefers-reduced-motion: reduce)
+    .planet-workspace > .planet-panel, .planet-panel-toggle svg
+        transition: none
+
+@media (max-width: 767px)
+    body
+        overflow-y: auto
+
+    main
+        height: auto
+
+    .main-grid-container
+        grid-template-columns: minmax(0, 1fr)
+        grid-template-rows: minmax(250px, 40vh) minmax(0, 1fr)
+        grid-template-areas: "table" "explorer"
+
+    .planet-workspace
+        height: max(620px, calc(100dvh - var(--header-height)))
+
+        > .planet-panel
+            flex-basis: 200px
+
+    .planet-summary .planet-highlights
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+
+@media (max-height: 650px) and (min-width: 768px)
+    body
+        overflow-y: auto
+
+    main
+        min-height: 550px
+
+
+.scientific-data
+    display: flex
+    flex-direction: column
+    min-width: 0
+    min-height: 0
+    overflow: hidden
+
+    .scientific-title
+        flex-shrink: 0
+        font-size: 1.25rem
+        font-weight: 600
+
+    .scientific-scroll
+        padding-right: .75rem
+        padding-top: 1rem
+        border-top: 1px solid var(--color-block-border)
+        scrollbar-gutter: stable
+
+        &:focus-visible
+            outline: 1px solid var(--color-accent-1)
+            outline-offset: -1px
+
+        > section + section
+            margin-top: 1.5rem
+
+    h3
+        color: var(--color-accent-1)
+        font-size: .95rem
+        font-weight: 500
+        margin-bottom: .75rem
+
+    .scientific-values
+        margin-bottom: .75rem
+
+        > div
+            display: grid
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)
+            align-items: baseline
+            gap: .5rem
+            padding: .6rem 0
+            border-bottom: 1px solid var(--color-block-border)
+
+        dt
+            color: var(--color-text-2)
+            font-size: .8rem
+            font-weight: 400
+            overflow-wrap: anywhere
+
+        dd
+            color: #46EE71
+            margin: 0
+            min-width: 0
+            overflow-wrap: anywhere
+            font-size: .9rem
+            text-align: right
+
+            span
+                font-size: .75rem
+                letter-spacing: normal
+
+            &.unavailable
+                color: var(--color-text-2)
+                font-size: .8rem
+
+    .scientific-note
+        color: var(--color-text-2)
+        font-size: .75rem
+        line-height: 1.6
 
 .loader
     position: relative

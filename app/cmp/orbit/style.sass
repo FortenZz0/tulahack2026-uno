@@ -1,0 +1,171 @@
+.orbit-view
+    padding: 1rem 0
+
+    h4
+        font-size: .85rem
+        font-weight: 500
+        margin-bottom: .75rem
+
+    .orbit-mode
+        display: flex
+        flex-wrap: wrap
+        align-items: center
+        gap: .5rem
+        color: var(--color-text-2)
+        font-size: .75rem
+
+    select, button
+        background: var(--color-block-background-2)
+        border: 1px solid var(--color-block-border)
+        border-radius: 8px
+        color: var(--color-accent-1)
+        font: inherit
+        padding: .5rem
+
+        &:focus-visible
+            outline: 2px solid var(--color-accent-1)
+            outline-offset: 2px
+
+    select
+        min-width: 0
+        max-width: 100%
+
+    .orbit-map, .orbit-flux-chart
+        display: block
+        width: 100%
+        height: auto
+        margin: .75rem 0
+        background: var(--color-block-background-2)
+        border-radius: 12px
+
+    .orbit-map
+        max-width: 540px
+        margin-left: auto
+        margin-right: auto
+
+    .orbit-zone
+        fill: none
+
+    .zone-conservative
+        stroke: #61be98
+        background: #61be98
+        stroke-opacity: .32
+
+    .zone-optimistic
+        stroke: #648bd0
+        background: #648bd0
+        stroke-opacity: .22
+
+    .zone-orbit
+        background: var(--color-accent-1)
+
+    .orbit-track, .orbit-flux-line
+        fill: none
+        stroke: var(--color-accent-1)
+        stroke-width: 2
+
+    .orbit-sun
+        fill: #edc66c
+
+    .orbit-sun-halo
+        fill: #edc66c
+        opacity: .12
+
+    .orbit-planet
+        fill: var(--color-accent-1)
+        stroke: var(--color-text-1)
+        stroke-width: 1.5
+
+    .orbit-planet-halo
+        fill: var(--color-accent-1)
+        opacity: .2
+
+    .orbit-distance, .orbit-flux-cursor
+        stroke: var(--color-text-2)
+        stroke-dasharray: 3 4
+
+    .orbit-map-label, .orbit-flux-chart text
+        fill: var(--color-text-2)
+        font-size: 10px
+
+    .orbit-grid-line
+        stroke: var(--color-block-border)
+
+    .orbit-legend
+        list-style: none
+        padding: 0
+        font-size: .7rem
+        line-height: 1.6
+
+        li
+            color: var(--color-text-2)
+            display: flex
+            align-items: baseline
+            gap: .4rem
+
+        i
+            width: 7px
+            height: 7px
+            border-radius: 50%
+            flex-shrink: 0
+
+    .orbit-controls
+        display: flex
+        flex-wrap: wrap
+        justify-content: space-between
+        align-items: center
+        gap: .5rem
+        font-size: .75rem
+        margin-bottom: .75rem
+
+        output
+            color: var(--color-text-2)
+            font-variant-numeric: tabular-nums
+
+    .orbit-time-label
+        color: var(--color-text-2)
+        font-size: .75rem
+
+    .orbit-time
+        display: block
+        width: 100%
+        margin: .5rem 0
+        accent-color: var(--color-accent-1)
+
+    .orbit-time-ticks
+        display: flex
+        justify-content: space-between
+        gap: .5rem
+
+        span
+            font-size: .65rem
+            letter-spacing: normal
+
+    .orbit-readings
+        display: flex
+        flex-wrap: wrap
+        gap: .5rem 1rem
+        margin: 1rem 0 .5rem
+
+        dt
+            color: var(--color-text-2)
+            font-size: .7rem
+            font-weight: 400
+
+        dd
+            margin: .25rem 0 0
+            font-size: .85rem
+            font-variant-numeric: tabular-nums
+
+    .orbit-status
+        font-size: .75rem
+        color: #61be98
+
+        &[data-zone="optimistic"]
+            color: #91b6f5
+
+        &[data-zone="outside"]
+            color: #eec146
+
+    a
+        color: var(--color-accent-1)

@@ -35,12 +35,19 @@ const planetState = {
 // 1. Получаем канвас и его ближайший родительский тег
 const canvas = document.getElementById('planet-canvas');
 const container = canvas.parentElement;
+const workspace = canvas.closest('.planet-workspace');
 
 const scene = new THREE.Scene();
 
 // Берем стартовые размеры родителя (с запасным вариантом, если блок временно скрыт)
 const initWidth = container.clientWidth || 300;
 const initHeight = container.clientHeight || 300;
+const initialRenderSize = Math.max(1, Math.ceil(Math.min(
+    workspace.clientWidth || initWidth,
+    workspace.clientHeight || initHeight
+)));
+let pendingRenderSize = initialRenderSize;
+let renderSize = initialRenderSize;
 
 const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
 camera.position.set(0, 0, 4);
@@ -48,8 +55,8 @@ camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
 // Третий параметр false важен: он запрещает Three.js жестко перезаписывать style.width и style.height в пикселях
-renderer.setSize(initHeight, initHeight, false);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(initialRenderSize, initialRenderSize, false);
 
 // ... весь ваш код генерации текстуры, планеты, оси и управления мышью остается без изменений ...
 
@@ -284,6 +291,9 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 let isDragging = false;
 let prevMouse = { x: 0, y: 0 };
 let velocity = { x: 0, y: 0 };
+// При FOV 45° планета с атмосферой целиком помещается в квадратный canvas с запасом.
+const minZoom = 3.2;
+const maxZoom = 7.0;
 let targetZoom = 4.25;
 
 canvas.addEventListener('pointerdown', (e) => {
@@ -306,7 +316,7 @@ window.addEventListener('pointermove', (e) => {
 
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    targetZoom = Math.max(1.75, Math.min(7.0, targetZoom + e.deltaY * 0.002));
+    targetZoom = THREE.MathUtils.clamp(targetZoom + e.deltaY * 0.002, minZoom, maxZoom);
 }, { passive: false });
 
 
@@ -381,6 +391,13 @@ window.updatePlanet = function(newProps) {
 function animate() {
     requestAnimationFrame(animate);
 
+    // Изменение буфера очищает canvas, поэтому сразу рисуем в нём новый кадр.
+    // Раскрытие панели меняет только CSS-размер квадратного canvas.
+    if (pendingRenderSize !== renderSize) {
+        renderSize = pendingRenderSize;
+        renderer.setSize(renderSize, renderSize, false);
+    }
+
     // Применяем вращение от мыши и плавно гасим инерцию
     planetGroup.rotation.y += velocity.x;
     planetGroup.rotation.x = Math.max(-1.2, Math.min(1.2, planetGroup.rotation.x + velocity.y));
@@ -409,11 +426,10 @@ const resizeObserver = new ResizeObserver((entries) => {
     // Пропускаем обновление, если родительский блок скрыт (display: none)
     if (width === 0 || height === 0) return;
 
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    renderer.setSize(width, height, false);
+    pendingRenderSize = Math.max(1, Math.ceil(Math.min(width, height)));
   }
 });
 
 // Запускаем слежение за родительским тегом
-// resizeObserver.observe(container);
+// Наблюдаем всю правую область: её размер не меняется при раскрытии панели.
+resizeObserver.observe(workspace);

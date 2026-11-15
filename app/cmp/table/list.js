@@ -1,13 +1,21 @@
 
 
 
-function PlanetCard(index, planet_name, star_name, esi) {
+function escapeName(value, fallback) {
+    const text = typeof value === "string" && value.trim() ? value.trim() : fallback;
+    const entities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    return text.replace(/[&<>"']/g, character => entities[character]);
+}
+
+export function PlanetCard(index, planet_name, star_name, esi) {
     let selected_class = "";
-    if (index == 1) selected_class = " selected"
+    const hasEsi = Number.isFinite(esi) && esi >= 0 && esi <= 1;
+    const esiText = hasEsi ? String(Math.round(esi * 100) / 100) : "—";
 
     let esi_class
 
-    if (esi >= 0.8) esi_class = "good"
+    if (!hasEsi) esi_class = "unavailable"
+    else if (esi >= 0.8) esi_class = "good"
     else if (esi >= 0.5) esi_class = "normal"
     else esi_class = "bad"
 
@@ -23,18 +31,18 @@ function PlanetCard(index, planet_name, star_name, esi) {
 
                 <div class="name">
                     <h5 class="mb-0">
-                        ${planet_name}
+                        ${escapeName(planet_name, "Нет названия")}
                     </h5>
                     <span class="">
-                        <i class="fa-regular fa-star"></i> ${star_name}
+                        <i class="fa-regular fa-star"></i> ${escapeName(star_name, "Звезда неизвестна")}
                     </span>
                 </div>
             </div>
 
             <div class="values h-100 d-flex align-items-center gap-3">
                 <div class="esi d-flex flex-column align-items-center ${esi_class}">
-                    <span class="val">
-                        ${esi}
+                    <span class="val"${hasEsi ? "" : ' aria-label="Нет данных ESI"'}>
+                        ${esiText}
                     </span>
                     <span class="desc">
                         ESI
@@ -47,20 +55,12 @@ function PlanetCard(index, planet_name, star_name, esi) {
 
 
 
-import { ExoplanetLibrary } from "/lib/index.js";
-
-
 var selected_planet;
 var planets_limit = 10
 var planets;
 
-async function GetPlanets() {
+export async function GetPlanets(library) {
     // $(".planets-cards").append(PlanetCard(0, "test", "test", 1))
-
-    const library = new ExoplanetLibrary({
-        maxAttempts: 5,
-        retryDelay: 1000,
-    });
 
     try {
         await library.init();
@@ -79,9 +79,10 @@ async function GetPlanets() {
         for (let i = 0; i < planets.length; i++) {
             const pl = planets[i];
             
-            let esi = Math.round(pl.esi.full * 100) / 100
+            const star = library.getPlanetStar(pl);
+            const esi = pl.esi?.simple;
 
-            $(".planets-cards").append(PlanetCard(i+1, pl.name, pl.star.name, esi, 1))
+            $(".planets-cards").append(PlanetCard(i+1, pl.name, star?.name, esi))
         }
 
 
@@ -105,14 +106,3 @@ async function GetPlanets() {
         console.error("Ошибка загрузки:", error);
     }
 }
-
-$(document).ready(() => {
-
-    GetPlanets();
-
-    
-})
-
-
-
-

@@ -97,6 +97,12 @@ section.table
             cursor: pointer
             position: relative
             margin-bottom: 30px
+
+            > .d-flex:first-child
+                min-width: 0
+
+            .index, .values
+                flex-shrink: 0
             
 
             .index
@@ -112,13 +118,20 @@ section.table
                     font-weight: 600
             
             .name
+                min-width: 0
+
                 h5
                     font-size: 18px
                     white-space: nowrap
                     text-overflow: ellipsis
+                    overflow: hidden
                     letter-spacing: 3px
                     transition: 0.3s ease-in-out
                 span
+                    display: block
+                    white-space: nowrap
+                    overflow: hidden
+                    text-overflow: ellipsis
                     font-size: 12px
                     i
                         color: inherit
@@ -136,6 +149,8 @@ section.table
                         color: #eec146
                     &.bad span             // >= 0
                         color: #ee4646
+                    &.unavailable span
+                        color: var(--color-text-2)
             
 
             &:hover:not(.selected)

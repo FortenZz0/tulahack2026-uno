@@ -1,0 +1,45 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { orbitPosition } from "../orbit-math.js";
+
+const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-10, `${actual} ≈ ${expected}`);
+
+test("Круговая орбита: постоянный поток и равномерная фаза", () => {
+    const position = orbitPosition(0.25, 2, 0, 4);
+    near(position.x, 0);
+    near(position.y, 2);
+    near(position.radius, 2);
+    near(position.flux, 1);
+});
+
+test("Перицентр и апоцентр: звезда в фокусе, поток обратно пропорционален r²", () => {
+    const peri = orbitPosition(0, 1, 0.4, 1);
+    const apo = orbitPosition(0.5, 1, 0.4, 1);
+    near(peri.x, 0.6);
+    near(apo.x, -1.4);
+    near(peri.radius, 0.6);
+    near(apo.radius, 1.4);
+    near(peri.flux / apo.flux, (1.4 / 0.6) ** 2);
+});
+
+test("Фаза соответствует времени по уравнению Кеплера, а не углу", () => {
+    const e = 0.6;
+    const position = orbitPosition(0.25, 1, e, 1);
+    const E = Math.atan2(position.y / Math.sqrt(1 - e ** 2), position.x + e);
+    near(E - e * Math.sin(E), Math.PI / 2);
+    near(orbitPosition(1, 1, e, 1).x, orbitPosition(0, 1, e, 1).x);
+});
+
+test("Земля остаётся в заданных границах зоны на всём обороте", () => {
+    for (let i = 0; i <= 100; i++) {
+        const { radius, flux } = orbitPosition(i / 100, 1, 0.0167, 1);
+        assert.ok(radius > 0.9504 && radius < 1.6760);
+        assert.ok(flux > 0.96 && flux < 1.04);
+    }
+});
+
+test("Недопустимые орбитальные параметры отклоняются", () => {
+    for (const parameters of [[0, 0, 0, 1], [0, 1, 1, 1], [0, 1, -0.1, 1], [0, 1, 0, null], [NaN, 1, 0, 1]]) {
+        assert.throws(() => orbitPosition(...parameters), RangeError);
+    }
+});

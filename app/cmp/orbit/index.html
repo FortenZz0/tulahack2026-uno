@@ -1,0 +1,61 @@
+<div class="orbit-view" id="orbit-view">
+    <h4>Орбита и обитаемая зона</h4>
+    <label class="orbit-mode" for="orbit-mode">Показать
+        <select id="orbit-mode">
+            <option value="earth">Земля · e = 0,0167</option>
+            <option value="example">Учебный эллипс · e = 0,4</option>
+        </select>
+    </label>
+
+    <svg class="orbit-map" viewBox="0 0 320 320" role="img" aria-labelledby="orbit-map-title orbit-map-description">
+        <title id="orbit-map-title">Орбита Земли вокруг Солнца</title>
+        <desc id="orbit-map-description">Вид сверху. Звезда в фокусе орбиты. Цветные кольца обозначают модельные обитаемые зоны.</desc>
+        <g data-orbit-zones></g>
+        <line class="orbit-distance" data-orbit-distance x1="160" y1="160"/>
+        <path class="orbit-track" data-orbit-track/>
+        <circle class="orbit-sun-halo" cx="160" cy="160" r="17"/>
+        <circle class="orbit-sun" cx="160" cy="160" r="7"/>
+        <text class="orbit-map-label" x="160" y="187" text-anchor="middle">Солнце</text>
+        <circle class="orbit-planet-halo" data-orbit-planet-halo r="10"/>
+        <circle class="orbit-planet" data-orbit-planet r="5"/>
+    </svg>
+
+    <ul class="orbit-legend">
+        <li><i class="zone-conservative" aria-hidden="true"></i>Консервативная: ≈ 0,95–1,68 а.е.</li>
+        <li><i class="zone-optimistic" aria-hidden="true"></i>Оптимистичная: ≈ 0,75–1,77 а.е.</li>
+        <li><i class="zone-orbit" aria-hidden="true"></i>Орбита</li>
+    </ul>
+
+    <div class="orbit-controls">
+        <button type="button" class="orbit-play" data-orbit-play aria-pressed="false">Воспроизвести</button>
+        <output for="orbit-time" data-orbit-day>День 0</output>
+    </div>
+    <label class="orbit-time-label" for="orbit-time">Время от перицентра</label>
+    <input class="orbit-time" id="orbit-time" type="range" min="0" max="1000" step="1" value="0">
+    <div class="orbit-time-ticks"><span>0</span><span>1 оборот · 365,26 дня</span></div>
+
+    <dl class="orbit-readings">
+        <div><dt>Расстояние</dt><dd data-orbit-radius></dd></div>
+        <div><dt>Поток излучения</dt><dd data-orbit-flux></dd></div>
+    </dl>
+    <p class="orbit-status" data-orbit-status></p>
+
+    <h4>Поток излучения за оборот</h4>
+    <svg class="orbit-flux-chart" viewBox="0 0 320 145" role="img" aria-labelledby="orbit-flux-title orbit-flux-description">
+        <title id="orbit-flux-title">Поток излучения в зависимости от времени</title>
+        <desc id="orbit-flux-description">Поток в единицах земного зависит от расстояния по закону обратных квадратов. Вертикальный маркер показывает выбранный момент.</desc>
+        <g data-flux-grid></g>
+        <path class="orbit-flux-line" data-flux-line/>
+        <line class="orbit-flux-cursor" data-flux-cursor y1="16" y2="112"/>
+        <circle class="orbit-planet" data-flux-dot r="4"/>
+        <text x="8" y="10">S⊕</text>
+        <text x="40" y="134">0</text>
+        <text x="174" y="134" text-anchor="middle">½ оборота</text>
+        <text x="308" y="134" text-anchor="end">1 оборот</text>
+    </svg>
+    <p class="scientific-note" data-orbit-explanation></p>
+    <p class="scientific-note">Анимация ускорена: один оборот за 16 секунд. Поток меняется по закону обратных квадратов расстояния.</p>
+    <p class="scientific-note mb-0">Размеры звезды и планеты условные. Зоны — модель для Солнца и планеты массой 1 M⊕, а не подтверждение наличия жизни.
+        <a href="https://arxiv.org/abs/1404.5292" target="_blank" rel="noopener noreferrer">Kopparapu et al., 2014, табл. 1</a>.
+    </p>
+</div>
