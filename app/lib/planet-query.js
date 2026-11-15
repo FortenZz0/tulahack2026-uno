@@ -7,7 +7,18 @@
 // filter = {min: number, max: number}
 
 
-import { Planet } from "./planet.js";
+// Каталог Worker содержит обычные JSON-объекты, без класса Planet.
+// Явный контракт позволяет проверять запросы и на пустом каталоге,
+// независимо от того, какие значения доступны у конкретной планеты.
+const STRING_FIELDS = new Set(["id", "name", "starId"]);
+const NUMBER_FIELDS = new Set([
+    "mass", "radius", "density", "vesc", "eqt", "flux",
+    "orbit.semiMajorAxis", "orbit.eccentricity", "orbit.period",
+    "esi.full", "esi.simple",
+    "habitableZone.conservative.inner", "habitableZone.conservative.outer",
+    "habitableZone.optimistic.inner", "habitableZone.optimistic.outer",
+    "habitableTimeFraction.conservative", "habitableTimeFraction.optimistic",
+]);
 
 function getValue(object, path) {
     return path.split(".").reduce(
@@ -25,22 +36,8 @@ function validateField(path) {
         throw new RangeError(`Invalid planet field: ${path}`);
     }
 
-    let value = new Planet();
-
-    for (const key of path.split(".")) {
-        if (
-            value === null ||
-            typeof value !== "object" ||
-            !Object.hasOwn(value, key)
-        ) {
-            throw new RangeError(`Unknown planet field: ${path}`);
-        }
-
-        value = value[key];
-    }
-
-    if (value !== null && typeof value === "object") {
-        throw new RangeError(`Field is not sortable: ${path}`);
+    if (!STRING_FIELDS.has(path) && !NUMBER_FIELDS.has(path)) {
+        throw new RangeError(`Unknown or non-scalar planet field: ${path}`);
     }
 }
 
@@ -83,8 +80,8 @@ function validateOptions({ filters, sort, offset, limit }) {
     for (const [path, range] of Object.entries(filters)) {
         validateField(path);
 
-        if (path === "name") {
-            throw new RangeError("Name cannot use numeric filters");
+        if (STRING_FIELDS.has(path)) {
+            throw new RangeError(`Field cannot use numeric filters: ${path}`);
         }
 
         if (
