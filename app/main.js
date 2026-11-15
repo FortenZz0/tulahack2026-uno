@@ -11,7 +11,7 @@ import { createEsiExplanation } from "./cmp/esi-explanation/script.js";
 import.meta.glob(
     [
         "./**/*.css",
-        "./**/*.sass", "!/sass/style.sass",
+        "./**/*.sass", "!./sass/style.sass",
         "!./sass/response.sass", // импортируем остальные стили для обычного приоритета (кроме основных стилей и адаптива)
         "!./**/tests/*.js",
         "./**/*.js", 

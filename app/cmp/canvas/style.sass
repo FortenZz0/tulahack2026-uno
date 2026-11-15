@@ -125,7 +125,8 @@ section.planet-info
             cursor: grab
             width: 100%
             height: 100%
-            touch-action: none
+            // Вертикальный жест прокручивает страницу, горизонтальный вращает модель.
+            touch-action: pan-y pinch-zoom
 
             &:active
                 cursor: grabbing

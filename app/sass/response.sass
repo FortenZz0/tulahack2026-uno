@@ -1,0 +1,206 @@
+// Подключается после стилей компонентов в main.js.
+button, a, [role="button"]
+    touch-action: manipulation
+
+button, [role="button"]
+    -webkit-tap-highlight-color: transparent
+    -webkit-user-select: none
+    user-select: none
+
+@media (pointer: coarse)
+    input, textarea, select
+        font-size: 16px
+
+    .orbit-view select, .orbit-view button, .comparison-toggle
+        min-height: 44px
+
+    .orbit-view .orbit-time
+        min-height: 44px
+
+// На невысоких ноутбуках страница прокручивается вместо сжатия модели и панелей.
+@media (min-width: 992px) and (max-height: 749px)
+    body
+        height: auto
+        min-height: 100dvh
+        overflow-y: auto
+
+    main
+        flex: none
+        height: 650px
+
+@media (max-width: 1199px) and (min-width: 992px)
+    .main-grid-container
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr)
+        gap: 1rem
+
+    .planet-summary .planet-highlights
+        gap: .5rem
+
+        dd
+            font-size: .95rem
+
+// Планшеты и телефоны: каталог с собственной прокруткой, затем модель и описание.
+@media (max-width: 991px)
+    body
+        height: auto
+        min-height: 100dvh
+        overflow-y: auto
+
+        &.color-sheme-1_black
+            --header-height: 88px
+            --main-padding-y: 20px
+
+    main
+        flex: none
+
+    header
+        .logo h1
+            font-size: clamp(1.25rem, 3vw, 1.75rem)
+
+        .cm > span
+            max-width: 20rem
+            font-size: .8rem
+
+    .main-grid-container
+        height: auto
+        grid-template-columns: minmax(0, 1fr)
+        grid-template-rows: auto auto
+        grid-template-areas: "table" "explorer"
+        gap: 1rem
+
+    section.table
+        height: clamp(320px, 48svh, 480px)
+
+        > .accent
+            font-size: .8rem
+            letter-spacing: .1em
+
+        > h1
+            font-size: 1.75rem
+
+    .planet-workspace
+        gap: 1rem
+
+        > .planet-info
+            flex: none
+            display: flex
+            flex-direction: column
+            height: auto
+
+            > .content
+                position: relative
+                flex: none
+
+            > .planet-stage
+                flex: none
+                height: clamp(300px, 55vw, 420px)
+
+        > .planet-panel, &.details-expanded > .planet-panel
+            flex: none
+            padding: 0 1.25rem 1rem
+            transition: none
+
+        &.details-expanded .planet-info
+            .content
+                padding: 1.5rem !important
+
+            h1
+                font-size: calc(1.375rem + 1.5vw) !important
+
+    .scientific-data .scientific-scroll
+        flex: none
+        overflow: visible
+        padding-right: 0
+        scrollbar-gutter: auto
+        -webkit-mask-image: none
+        mask-image: none
+
+    .orbit-view .orbit-time-controls.is-pinned
+        padding-bottom: max(.75rem, env(safe-area-inset-bottom, 0px))
+
+@media (max-width: 575px)
+    body.color-sheme-1_black
+        --header-height: 72px
+        --main-padding-y: 12px
+        --block-border-radius: 16px
+
+    header
+        .cm
+            flex-wrap: wrap
+            gap: 0
+            padding-bottom: .75rem
+
+            > span
+                max-width: none
+                width: 100%
+                font-size: .75rem
+                text-align: left
+
+        .logo
+            padding-top: 1rem !important
+            padding-bottom: 1rem !important
+
+            h1
+                font-size: 1.25rem
+
+            span
+                font-size: .65rem
+                letter-spacing: .15em
+
+    section.table
+        height: clamp(300px, 52svh, 420px)
+        padding: 1rem !important
+
+        > h1
+            font-size: 1.5rem
+            margin-bottom: 1rem !important
+
+        .planets-cards
+            --card-height: 52px
+            padding-right: .5rem
+
+            .planet-card
+                margin-bottom: 24px
+
+                &::after
+                    bottom: -12px
+
+                .index
+                    margin-right: .75rem !important
+
+                .name .planet-name
+                    font-size: 1rem
+                    letter-spacing: .06em
+
+                .name .star-name
+                    font-size: .75rem
+                    letter-spacing: .04em
+
+    .planet-workspace
+        > .planet-info > .planet-stage
+            height: clamp(280px, 85vw, 380px)
+
+        > .planet-panel, &.details-expanded > .planet-panel
+            padding: 0 1rem .75rem
+
+        > .planet-info .content, &.details-expanded .planet-info .content
+            padding: 1rem !important
+
+        .planet-summary .planet-highlights
+            grid-template-columns: repeat(2, minmax(0, 1fr))
+            gap: 1rem
+
+    .orbit-view .orbit-controls
+        grid-template-columns: minmax(0, 1fr)
+
+        button
+            max-width: none
+
+        output
+            text-align: left
+            white-space: normal
+            overflow-wrap: anywhere
+
+    .orbit-view .orbit-readings dd
+        white-space: normal
+        overflow-wrap: anywhere

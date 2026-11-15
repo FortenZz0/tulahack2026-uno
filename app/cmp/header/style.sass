@@ -1,10 +1,13 @@
 header
-    height: var(--header-height)
+    flex: 0 0 auto
+    min-height: var(--header-height)
+    padding-top: env(safe-area-inset-top, 0px)
     background: var(--header-background)
 
     & > div
-        height: 100%
         position: relative
+        padding-left: max(var(--bs-gutter-x, .75rem), env(safe-area-inset-left, 0px))
+        padding-right: max(var(--bs-gutter-x, .75rem), env(safe-area-inset-right, 0px))
 
         &::after
             content: ""
@@ -17,9 +20,23 @@ header
             background: var(--color-block-border)
     
     .logo
+        min-width: 0
+        flex-shrink: 0
         height: var(--header-height)
         display: flex
         align-items: center
 
         img
             height: 100%
+            width: auto
+            object-fit: contain
+
+    .cm
+        gap: 1rem
+
+        > span
+            max-width: 30rem
+            font-size: .9rem
+            letter-spacing: .08em
+            text-align: right
+            text-wrap: balance

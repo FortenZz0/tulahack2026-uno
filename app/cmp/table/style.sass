@@ -1,7 +1,11 @@
 section.table
     display: flex
     flex-direction: column
+    min-width: 0
     min-height: 0
+
+    > h1, > span, > .search-field, > .planets-list
+        flex-shrink: 0
 
     .search-field
         background: var(--color-block-background-2)
@@ -165,6 +169,7 @@ section.table
                     overflow: hidden
                     letter-spacing: 3px
                     transition: 0.3s ease-in-out
+                    color: white
                 .star-name
                     display: block
                     white-space: nowrap
@@ -191,16 +196,20 @@ section.table
                         color: var(--color-text-2)
             
 
-            &:hover:not(.selected):not(.comparison-unavailable)
+            @media (hover: hover) and (pointer: fine)
+                &:hover:not(.selected):not(.comparison-unavailable)
 
-                .index 
-                    span
-                        color: var(--color-accent-1)
+                    .index
+                        span
+                            color: var(--color-accent-1)
                 
-                .name
-                    .planet-name
-                        color: var(--color-accent-1)
-                        letter-spacing: 3px
+                    .name
+                        .planet-name
+                            color: var(--color-accent-1)
+                            letter-spacing: 3px
+
+            .planet-select:active
+                opacity: .7
             
             &.selected
                 .index 
