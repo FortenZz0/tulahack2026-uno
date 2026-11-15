@@ -1,11 +1,11 @@
-import test from "node:test";
+﻿import test from "node:test";
 import assert from "node:assert/strict";
 
-import { Planet } from "../planet.js";
+
 import { queryPlanets } from "../planet-query.js";
 
 function createPlanet(name, radius, esi, fraction) {
-    const planet = new Planet();
+    const planet = { esi: {} };
 
     planet.name = name;
     planet.radius = radius;
@@ -346,4 +346,67 @@ test("Некорректный тип диапазона вызывает оши
         }),
         TypeError
     );
+});
+
+
+test("Нечисловые и неконечные значения исключаются из числовых фильтров", () => {
+    const values = [null, undefined, NaN, Infinity, -Infinity, "1", 0, 1];
+    const input = values.map(radius => ({ radius }));
+    assert.deepEqual(queryPlanets(input, {
+        filters: { radius: { min: 0, max: 1 } },
+    }).map(p => p.radius), [0, 1]);
+});
+
+test("Все отсутствующие значения остаются в конце при обоих направлениях", () => {
+    const input = [null, NaN, 2, undefined, Infinity, 1].map(radius => ({ radius }));
+    for (const order of ["asc", "desc"]) {
+        const result = queryPlanets(input, { sort: { by: "radius", order } });
+        assert.deepEqual(result.slice(0, 2).map(p => p.radius), order === "asc" ? [1, 2] : [2, 1]);
+        assert.deepEqual(result.slice(2), [input[0], input[1], input[3], input[4]]);
+    }
+});
+
+test("Некорректные пути полей отклоняются даже для пустого каталога", () => {
+    for (const by of ["", ".radius", "esi.", "esi..full", "__proto__", "constructor", "esi.unknown"]) {
+        assert.throws(() => queryPlanets([], { sort: { by, order: "asc" } }), RangeError);
+        assert.throws(() => queryPlanets([], { filters: { [by]: { min: 0 } } }), RangeError);
+    }
+});
+
+test("Пагинация отклоняет недопустимые числа и типы", () => {
+    for (const field of ["offset", "limit"]) {
+        for (const value of [-1, 0.5, NaN, Infinity, "1", null, Number.MAX_SAFE_INTEGER + 1]) {
+            assert.throws(() => queryPlanets([], { [field]: value }), RangeError);
+        }
+    }
+    assert.deepEqual(queryPlanets(planets, { offset: 100 }), []);
+});
+
+test("Границы диапазона должны быть конечными числами", () => {
+    for (const key of ["min", "max"]) {
+        for (const value of [NaN, Infinity, -Infinity, "1", null]) {
+            assert.throws(() => queryPlanets([], {
+                filters: { radius: { [key]: value } },
+            }), TypeError);
+        }
+    }
+});
+
+test("Worker id и starId поддерживают строковую сортировку", () => {
+    const input = [
+        { id: "b", starId: "alpha" },
+        { id: "a", starId: null },
+        { id: "c", starId: "beta" },
+    ];
+    assert.deepEqual(queryPlanets(input, {
+        sort: { by: "id", order: "asc" },
+    }).map(p => p.id), ["a", "b", "c"]);
+    assert.deepEqual(queryPlanets(input, {
+        sort: { by: "starId", order: "desc" },
+    }).map(p => p.id), ["c", "b", "a"]);
+    for (const field of ["id", "starId"]) {
+        assert.throws(() => queryPlanets([], {
+            filters: { [field]: { min: 0 } },
+        }), RangeError);
+    }
 });
