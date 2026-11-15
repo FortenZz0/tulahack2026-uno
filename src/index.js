@@ -1,61 +1,22 @@
-import { parseNASAPlanets } from "./nasa.js";
+import { parseNASAPlanets, NASA_FIELDS } from "./nasa.js";
 
 const NASA_URL =
     "https://exoplanetarchive.ipac.caltech.edu/TAP/sync";
 
-const FIELDS = [
-    "pl_name",
-    "hostname",
-    "hd_name",
-    "hip_name",
-    "tic_id",
-    "gaia_dr3_id",
-    "pl_rade",
-    "pl_bmasse",
-    "pl_bmassprov",
-    "pl_dens",
-    "pl_eqt",
-    "pl_insol",
-    "pl_orbsmax",
-    "pl_orbeccen",
-    "pl_orbper",
-    "pl_orbincl",
-    "pl_orblper",
-    "discoverymethod",
-    "disc_year",
-    "disc_facility",
-    "disc_telescope",
-    "disc_instrument",
-    "disc_refname",
-    "pl_trandep",
-    "pl_trandur",
-    "pl_rvamp",
-    "st_spectype",
-    "st_teff",
-    "st_lum",
-    "st_mass",
-    "st_rad",
-    "st_age",
-    "st_met",
-    "st_metratio",
-    "st_rotp",
-    "sy_snum",
-    "sy_mnum",
-    "sy_dist",
-    "cb_flag",
-    "ra",
-    "dec"
-];
+const FIELDS = NASA_FIELDS
 
 const STORAGE_KEY = "planets.json";
 const STARS_KEY = "stars.json";
 const MAX_KV_VALUE_SIZE = 25 * 1024 * 1024;
 
-// топ-50 по полному ESI
+// топ-50 по упрощенному ESI
 function createPreview(planets) {
     return planets
-        .filter(planet => Number.isFinite(planet.esi.full))
-        .sort((a, b) => b.esi.full - a.esi.full)
+        .filter(planet => Number.isFinite(planet.esi?.simple))
+        .sort((a, b) =>
+            b.esi.simple - a.esi.simple ||
+            a.id.localeCompare(b.id)
+        )
         .slice(0, 50);
 }
 
@@ -76,6 +37,19 @@ function isCurrentPart(data, field) {
         typeof data.updatedAt === "string" &&
         Number.isFinite(Date.parse(data.updatedAt)) &&
         Array.isArray(data[field]) &&
+        data[field].every(item =>
+            item !== null &&
+            typeof item === "object" &&
+            item.measurements !== null &&
+            typeof item.measurements === "object" &&
+            item.flags !== null &&
+            typeof item.flags === "object" &&
+            (
+                field === "planets"
+                    ? item.esi?.full === null
+                    : Array.isArray(item.planets)
+            )
+        ) &&
         !(field === "planets" ? "stars" in data : "planets" in data);
 }
 
