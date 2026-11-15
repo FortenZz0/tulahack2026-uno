@@ -48,14 +48,8 @@ export class Planet {
 
     // Обитаемая зона
     habitableZone = {
-        conservative: {
-            inner: null,
-            outer: null
-        },
-        optimistic: {
-            inner: null,
-            outer: null
-        }
+        conservative: { inner: null, outer: null },
+        optimistic: { inner: null, outer: null }
     };
 
     // Доля орбиты внутри обитаемой зоны
@@ -67,6 +61,20 @@ export class Planet {
     // Классификация
     classification = {
         sizeClass: null
+    };
+
+    // Метаданные измерений NASA
+    measurements = {};
+
+    // Результаты проверки данных и расчётов
+    flags = {
+        massIsEstimated: null,
+        massIsMinimum: null,
+        massIsLimit: null,
+        densityConsistency: null,
+        densityRatio: null,
+        circumbinary: null,
+        habitableZoneModel: null
     };
 }
 
@@ -99,7 +107,10 @@ export class Star {
         starCount: null,
         distance: null,
         circumbinary: null,
-        moonsReported: null
+        moonsReported: null,
+
+        // Отдельные физические компоненты звёздной системы
+        components: []
     };
 
     // Положение на небе
@@ -110,4 +121,13 @@ export class Star {
 
     // Связанные планеты
     planets = [];
+
+    // Метаданные измерений NASA
+    measurements = {};
+
+    // Результаты проверок
+    flags = {
+        conflictingMeasurements: false,
+        multiStarDataComplete: null
+    };
 }
