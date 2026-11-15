@@ -1,4 +1,3 @@
-
 export class Planet {
     // Идентификация и связь со звездой
     id = null;
