@@ -101,7 +101,7 @@ function parseStar(row) {
     star.identifiers.hd = parseName(row.hd_name);
     star.identifiers.hip = parseName(row.hip_name);
     star.identifiers.tic = parseName(row.tic_id);
-    star.identifiers.gaiaDR3 = parseName(row.gaia_id);
+    star.identifiers.gaiaDR3 = parseName(row.gaia_dr3_id);
 
     star.spectralType = parseName(row.st_spectype);
     star.temperature = parsePositiveNumber(row.st_teff);

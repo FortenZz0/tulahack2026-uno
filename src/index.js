@@ -6,16 +6,45 @@ const NASA_URL =
 const FIELDS = [
     "pl_name",
     "hostname",
+    "hd_name",
+    "hip_name",
+    "tic_id",
+    "gaia_dr3_id",
     "pl_rade",
     "pl_bmasse",
+    "pl_bmassprov",
     "pl_dens",
     "pl_eqt",
     "pl_insol",
-    "st_teff",
-    "st_lum",
     "pl_orbsmax",
     "pl_orbeccen",
-    "pl_orbper"
+    "pl_orbper",
+    "pl_orbincl",
+    "pl_orblper",
+    "discoverymethod",
+    "disc_year",
+    "disc_facility",
+    "disc_telescope",
+    "disc_instrument",
+    "disc_refname",
+    "pl_trandep",
+    "pl_trandur",
+    "pl_rvamp",
+    "st_spectype",
+    "st_teff",
+    "st_lum",
+    "st_mass",
+    "st_rad",
+    "st_age",
+    "st_met",
+    "st_metratio",
+    "st_rotp",
+    "sy_snum",
+    "sy_mnum",
+    "sy_dist",
+    "cb_flag",
+    "ra",
+    "dec"
 ];
 
 const STORAGE_KEY = "planets.json";
@@ -28,6 +57,38 @@ function createPreview(planets) {
         .filter(planet => Number.isFinite(planet.esi.full))
         .sort((a, b) => b.esi.full - a.esi.full)
         .slice(0, 50);
+}
+
+function createPreviewData(data) {
+    const planets = createPreview(data.planets);
+    const starIds = new Set(planets.map(planet => planet.starId));
+
+    return {
+        updatedAt: data.updatedAt,
+        planets,
+        stars: data.stars.filter(star => starIds.has(star.id))
+    };
+}
+
+function isCurrentCatalog(data) {
+    return data !== null &&
+        typeof data === "object" &&
+        typeof data.updatedAt === "string" &&
+        Array.isArray(data.planets) &&
+        Array.isArray(data.stars);
+}
+
+function serializeForKV(data) {
+    const json = JSON.stringify(data);
+    const size = new TextEncoder().encode(json).byteLength;
+
+    if (size > MAX_KV_VALUE_SIZE) {
+        throw new Error(
+            `Planet catalog exceeds KV limit: ${size} bytes`
+        );
+    }
+
+    return json;
 }
 
 // из базы НАСА
@@ -53,26 +114,17 @@ async function updatePlanets(env) {
         throw new Error("Invalid NASA API response");
     }
 
-    const planets = parseNASAPlanets(rows);
+    const { planets, stars } = parseNASAPlanets(rows);
 
     const data = {
         updatedAt: new Date().toISOString(),
-        planets
+        planets,
+        stars
     };
 
-    const preview = {
-        updatedAt: data.updatedAt,
-        planets: createPreview(planets)
-    };
-
-    const json = JSON.stringify(data);
-    const size = new TextEncoder().encode(json).byteLength;
-
-    if (size > MAX_KV_VALUE_SIZE) {
-        throw new Error(
-            `Planet catalog exceeds KV limit: ${size} bytes`
-        );
-    }
+    const preview = createPreviewData(data);
+    const json = serializeForKV(data);
+    const previewJson = serializeForKV(preview);
 
     await env.PLANETS_KV.put(
         STORAGE_KEY,
@@ -81,7 +133,7 @@ async function updatePlanets(env) {
 
     await env.PLANETS_KV.put(
         PREVIEW_KEY,
-        JSON.stringify(preview)
+        previewJson
     );
 
     console.log(`Сохранено ${planets.length} планет`);
@@ -116,35 +168,10 @@ export default {
 
         try {
             if (url.pathname === "/preview") {
-                let preview = await env.PLANETS_KV.get(PREVIEW_KEY);
+                const cachedPreview = await env.PLANETS_KV.get(PREVIEW_KEY);
 
-                if (preview === null) {
-                    const catalog = await env.PLANETS_KV.get(STORAGE_KEY);
-
-                    if (catalog !== null) {
-                        const data = JSON.parse(catalog);
-
-                        if (
-                            Array.isArray(data.planets) &&
-                            data.planets.every(planet =>
-                                planet !== null &&
-                                typeof planet === "object" &&
-                                planet.esi !== null &&
-                                typeof planet.esi === "object"
-                            )
-                        ) {
-                            preview = JSON.stringify({
-                                updatedAt: data.updatedAt,
-                                planets: createPreview(data.planets)
-                            });
-
-                            await env.PLANETS_KV.put(PREVIEW_KEY, preview);
-                        }
-                    }
-                }
-
-                if (preview !== null) {
-                    return new Response(preview, {
+                if (cachedPreview !== null && isCurrentCatalog(JSON.parse(cachedPreview))) {
+                    return new Response(cachedPreview, {
                         headers: {
                             ...headers,
                             "Content-Type": "application/json"
@@ -152,19 +179,34 @@ export default {
                     });
                 }
 
+                const catalog = await env.PLANETS_KV.get(STORAGE_KEY);
+
+                if (catalog !== null) {
+                    const data = JSON.parse(catalog);
+
+                    if (isCurrentCatalog(data)) {
+                        const preview = serializeForKV(createPreviewData(data));
+                        await env.PLANETS_KV.put(PREVIEW_KEY, preview);
+
+                        return new Response(preview, {
+                            headers: {
+                                ...headers,
+                                "Content-Type": "application/json"
+                            }
+                        });
+                    }
+                }
+
                 const data = await updatePlanets(env);
 
-                return Response.json({
-                    updatedAt: data.updatedAt,
-                    planets: createPreview(data.planets)
-                }, {
+                return Response.json(createPreviewData(data), {
                     headers
                 });
             }
 
             const object = await env.PLANETS_KV.get(STORAGE_KEY);
 
-            if (object !== null) {
+            if (object !== null && isCurrentCatalog(JSON.parse(object))) {
                 return new Response(object, {
                     headers: {
                         ...headers,
