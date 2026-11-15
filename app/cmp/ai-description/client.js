@@ -14,7 +14,9 @@ export function createDescriptionClient({ baseUrl, fetchImpl = (...args) => fetc
         const request = (async () => {
             const timer = setTimeout(() => controller.abort(), timeoutMs);
             try {
-                const url = new URL('/desc', baseUrl);
+                const base = new URL(baseUrl);
+                base.pathname = `${base.pathname.replace(/\/+$/, '')}/`;
+                const url = new URL('desc', base);
                 url.searchParams.set('id', id);
                 const response = await fetchImpl(url.toString(), { signal: controller.signal });
                 if (!response.ok) {

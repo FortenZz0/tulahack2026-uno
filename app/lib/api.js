@@ -1,5 +1,5 @@
 const API_URL =
-    "https://tulahack2026-uno-exoworker.dfilirini.workers.dev";
+    "https://tg.filinda.ru/exoplanet-api";
 
 export async function fetchCatalog(mode) {
     if (mode !== "preview" && mode !== "full") {

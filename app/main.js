@@ -66,7 +66,7 @@ $(document).ready(() => {
     const esiExplanation = createEsiExplanation(document.getElementById('esi-explanation'));
     esiExplanation.setPlanet(earth);
     descriptionClient = createDescriptionClient({
-        baseUrl: 'https://tulahack2026-uno-exoworker.dfilirini.workers.dev',
+        baseUrl: 'https://tg.filinda.ru/exoplanet-api/',
     });
     aiDescription = createAiDescription(document.getElementById('ai-description'), descriptionClient);
     aiDescription.setPlanet(earth);

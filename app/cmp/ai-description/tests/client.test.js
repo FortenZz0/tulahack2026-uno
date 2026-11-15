@@ -5,6 +5,21 @@ import { createDescriptionClient } from '../client.js';
 const baseUrl = 'https://worker.example';
 const response = (id, description = '**Что известно**\n\nТекст') => ({ ok: true, json: async () => ({ id, description }) });
 
+test('Прокси сохраняет префикс пути и точный ID с завершающим слешем и без него', async () => {
+    const id = "planet:teegarden's star b & c#1";
+    for (const baseUrl of ['https://tg.filinda.ru/exoplanet-api', 'https://tg.filinda.ru/exoplanet-api/']) {
+        const client = createDescriptionClient({ baseUrl, fetchImpl: async address => {
+            const url = new URL(address);
+            assert.equal(url.origin, 'https://tg.filinda.ru');
+            assert.equal(url.pathname, '/exoplanet-api/desc');
+            assert.equal(url.searchParams.get('id'), id);
+            return response(id);
+        } });
+        assert.equal((await client.getDescription(id)).id, id);
+        client.dispose();
+    }
+});
+
 test('ID с апострофом и пробелами кодируется, параллельные вызовы объединяются и кэшируются', async () => {
     const id = "planet:teegarden's star b & c#1";
     let resolve;
