@@ -48,7 +48,7 @@ const FIELDS = [
 ];
 
 const STORAGE_KEY = "planets.json";
-const PREVIEW_KEY = "preview.json";
+const STARS_KEY = "stars.json";
 const MAX_KV_VALUE_SIZE = 25 * 1024 * 1024;
 
 // топ-50 по полному ESI
@@ -70,12 +70,13 @@ function createPreviewData(data) {
     };
 }
 
-function isCurrentCatalog(data) {
+function isCurrentPart(data, field) {
     return data !== null &&
         typeof data === "object" &&
         typeof data.updatedAt === "string" &&
-        Array.isArray(data.planets) &&
-        Array.isArray(data.stars);
+        Number.isFinite(Date.parse(data.updatedAt)) &&
+        Array.isArray(data[field]) &&
+        !(field === "planets" ? "stars" in data : "planets" in data);
 }
 
 function serializeForKV(data) {
@@ -115,26 +116,21 @@ async function updatePlanets(env) {
     }
 
     const { planets, stars } = parseNASAPlanets(rows);
+    const updatedAt = new Date().toISOString();
 
     const data = {
-        updatedAt: new Date().toISOString(),
+        updatedAt,
         planets,
         stars
     };
 
-    const preview = createPreviewData(data);
-    const json = serializeForKV(data);
-    const previewJson = serializeForKV(preview);
+    const planetsJson = serializeForKV({ updatedAt, planets });
+    const starsJson = serializeForKV({ updatedAt, stars });
 
-    await env.PLANETS_KV.put(
-        STORAGE_KEY,
-        json
-    );
-
-    await env.PLANETS_KV.put(
-        PREVIEW_KEY,
-        previewJson
-    );
+    await Promise.all([
+        env.PLANETS_KV.put(STORAGE_KEY, planetsJson),
+        env.PLANETS_KV.put(STARS_KEY, starsJson)
+    ]);
 
     console.log(`Сохранено ${planets.length} планет`);
 
@@ -145,7 +141,7 @@ export default {
     async fetch(request, env) {
         const url = new URL(request.url);
 
-        if (url.pathname !== "/planets" && url.pathname !== "/preview") {
+        if (!["/planets", "/stars", "/preview", "/full"].includes(url.pathname)) {
             return new Response("Not Found", {
                 status: 404
             });
@@ -167,61 +163,54 @@ export default {
         };
 
         try {
-            if (url.pathname === "/preview") {
-                const cachedPreview = await env.PLANETS_KV.get(PREVIEW_KEY);
+            if (url.pathname === "/planets" || url.pathname === "/stars") {
+                const field = url.pathname === "/planets" ? "planets" : "stars";
+                const key = field === "planets" ? STORAGE_KEY : STARS_KEY;
+                const cached = await env.PLANETS_KV.get(key, "json");
 
-                if (cachedPreview !== null && isCurrentCatalog(JSON.parse(cachedPreview))) {
-                    return new Response(cachedPreview, {
-                        headers: {
-                            ...headers,
-                            "Content-Type": "application/json"
-                        }
-                    });
+                if (isCurrentPart(cached, field)) {
+                    return Response.json(cached, { headers });
                 }
 
-                const catalog = await env.PLANETS_KV.get(STORAGE_KEY);
-
-                if (catalog !== null) {
-                    const data = JSON.parse(catalog);
-
-                    if (isCurrentCatalog(data)) {
-                        const preview = serializeForKV(createPreviewData(data));
-                        await env.PLANETS_KV.put(PREVIEW_KEY, preview);
-
-                        return new Response(preview, {
-                            headers: {
-                                ...headers,
-                                "Content-Type": "application/json"
-                            }
-                        });
-                    }
-                }
-
+                console.log("Каталог пуст, загружунькаем данные с NASA");
                 const data = await updatePlanets(env);
 
-                return Response.json(createPreviewData(data), {
-                    headers
-                });
+                return Response.json({
+                    updatedAt: data.updatedAt,
+                    [field]: data[field]
+                }, { headers });
             }
 
-            const object = await env.PLANETS_KV.get(STORAGE_KEY);
+            const [cachedPlanets, cachedStars] = await Promise.all([
+                env.PLANETS_KV.get(STORAGE_KEY, "json"),
+                env.PLANETS_KV.get(STARS_KEY, "json")
+            ]);
 
-            if (object !== null && isCurrentCatalog(JSON.parse(object))) {
-                return new Response(object, {
-                    headers: {
-                        ...headers,
-                        "Content-Type": "application/json"
-                    }
-                });
+            if (!isCurrentPart(cachedPlanets, "planets") ||
+                !isCurrentPart(cachedStars, "stars")) {
+                console.log("Каталог пуст, загружунькаем данные с NASA");
+                const data = await updatePlanets(env);
+
+                return Response.json(
+                    url.pathname === "/preview" ? createPreviewData(data) : data,
+                    { headers }
+                );
             }
 
-            console.log("Каталог пуст, загружунькаем данные с NASA");
+            if (cachedPlanets.updatedAt !== cachedStars.updatedAt) {
+                throw new Error("Planet and star catalog timestamps do not match");
+            }
 
-            const data = await updatePlanets(env);
+            const data = {
+                updatedAt: cachedPlanets.updatedAt,
+                planets: cachedPlanets.planets,
+                stars: cachedStars.stars
+            };
 
-            return Response.json(data, {
-                headers
-            });
+            return Response.json(
+                url.pathname === "/preview" ? createPreviewData(data) : data,
+                { headers }
+            );
         } catch (error) {
             console.error("Не удалось получить каталог планет: ", error);
 
