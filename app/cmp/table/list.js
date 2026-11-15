@@ -7,10 +7,10 @@ function escapeName(value, fallback) {
     return text.replace(/[&<>"']/g, character => entities[character]);
 }
 
-export function PlanetCard(index, planet_name, star_name, esi) {
+export function PlanetCard(index, planet_name, star_name, esi, id = String(index)) {
     let selected_class = "";
     const hasEsi = Number.isFinite(esi) && esi >= 0 && esi <= 1;
-    const esiText = hasEsi ? String(Math.round(esi * 100) / 100) : "—";
+    const esiText = hasEsi ? esi.toFixed(2).replace(".", ",") : "—";
 
     let esi_class
 
@@ -21,60 +21,36 @@ export function PlanetCard(index, planet_name, star_name, esi) {
 
 
     return `
-        <div class="planet-card d-flex align-items-center justify-content-between${selected_class}">
-            <div class="d-flex align-items-center h-100">
-                <div class="index d-flex justify-content-center align-items-center me-3">
-                    <span class="fs-4">
-                        ${index}
-                    </span>
-                </div>
-
-                <div class="name">
-                    <h5 class="mb-0">
-                        ${escapeName(planet_name, "Нет названия")}
-                    </h5>
-                    <span class="">
-                        <i class="fa-regular fa-star"></i> ${escapeName(star_name, "Звезда неизвестна")}
-                    </span>
-                </div>
-            </div>
-
-            <div class="values h-100 d-flex align-items-center gap-3">
-                <div class="esi d-flex flex-column align-items-center ${esi_class}">
-                    <span class="val"${hasEsi ? "" : ' aria-label="Нет данных ESI"'}>
-                        ${esiText}
-                    </span>
-                    <span class="desc">
-                        ESI
-                    </span>
-                </div>
-            </div>
+        <div class="planet-card d-flex align-items-center justify-content-between${selected_class}" data-planet-id="${escapeName(id, String(index))}">
+            <button type="button" class="planet-select d-flex align-items-center h-100" aria-pressed="false" aria-label="Выбрать ${escapeName(planet_name, "планету")}">
+                <span class="index esi ${esi_class} d-flex flex-column justify-content-center align-items-center me-3">
+                    <span class="val"${hasEsi ? "" : ' aria-label="Нет данных ESI"'}>${esiText}</span>
+                    <span class="desc">ESI</span>
+                </span>
+                <span class="name">
+                    <span class="planet-name">${escapeName(planet_name, "Нет названия")}</span>
+                    <span class="star-name"><i class="fa-regular fa-star"></i> ${escapeName(star_name, "Звезда неизвестна")}</span>
+                </span>
+            </button>
         </div>
     `
 }
 
 
 
-var selected_planet;
-var planets_limit = 10
+var planets_limit = 50
 var planets;
 
-export async function GetPlanets(library) {
+export async function GetPlanets(library, { onSelect = () => {}, onReady = () => {} } = {}) {
     // $(".planets-cards").append(PlanetCard(0, "test", "test", 1))
 
     try {
         await library.init();
         
-        planets = library.getPlanets({
-            sort: {
-                by: "esi.simple",
-                order: "desc",
-            },
-            offset: 0,
-            limit: planets_limit,
-        });
+        planets = library.getTopPlanets().slice(0, planets_limit);
 
         console.log("Каталог загружен:", planets);
+        $(".planets-cards").empty().removeClass("loader");
         
         for (let i = 0; i < planets.length; i++) {
             const pl = planets[i];
@@ -82,22 +58,22 @@ export async function GetPlanets(library) {
             const star = library.getPlanetStar(pl);
             const esi = pl.esi?.simple;
 
-            $(".planets-cards").append(PlanetCard(i+1, pl.name, star?.name, esi))
+            $(".planets-cards").append(PlanetCard(i+1, pl.name, star?.name, esi, pl.id))
         }
 
 
         
-        selected_planet = document.querySelector(".planets-cards .planet-card.selected")
-
-
-        $(".planets-cards .planet-card").on("click", (e) => {
-            if (selected_planet && e.currentTarget == selected_planet) return;
-
-            $(".planets-cards .planet-card").removeClass("selected")
-
-            $(e.currentTarget).addClass("selected")
-            selected_planet = $(e.currentTarget)
-        })
+        const cards = $(".planets-cards");
+        const resolvePlanet = target => {
+            const id = target.closest(".planet-card").dataset.planetId;
+            return planets.find(planet => planet.id === id) ?? library.getPlanet(id);
+        };
+        cards.off(".planetList");
+        cards.on("click.planetList", ".planet-select", event => {
+            const planet = resolvePlanet(event.currentTarget);
+            if (planet) onSelect(planet);
+        });
+        onReady(planets);
 
 
 

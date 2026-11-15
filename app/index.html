@@ -46,6 +46,10 @@
                     </span>
                 </div>
 
+                <button type="button" class="comparison-toggle" id="comparison-toggle" aria-pressed="false" hidden>
+                    <span aria-hidden="true">⇄</span> Сравнить
+                </button>
+
                 {% include "./app/cmp/canvas/index.html" %}
 
             </section>
@@ -56,76 +60,81 @@
                     <span>Подробнее о планете</span>
                 </button>
 
-                <div class="planet-summary">
+                <div class="scientific-scroll scrollbox" id="planet-panel-scroll" tabindex="0" role="region" aria-label="Параметры и описание планеты">
+                    <div class="planet-summary">
 
-                    <!-- Справочные данные Земли и Солнца до выбора планеты из каталога. -->
-                    <dl class="planet-highlights mb-0" aria-label="Основные характеристики Земли">
-                        <div>
-                            <dt>Радиус</dt>
-                            <dd>1 <span>R⊕</span></dd>
-                        </div>
-                        <div>
-                            <dt>Орбитальный период</dt>
-                            <dd>365,26 <span>дня</span></dd>
-                        </div>
-                        <div>
-                            <dt>Поток излучения</dt>
-                            <dd>1 <span>S⊕</span></dd>
-                        </div>
-                        <div>
-                            <dt>Расстояние до Солнца</dt>
-                            <dd>1 <span>а.е.</span></dd>
-                        </div>
-                    </dl>
-
-                </div>
-
-                <div class="scientific-scroll scrollbox" id="planet-details" tabindex="0" role="region" aria-label="Характеристики и описание Земли" hidden>
-                    <h2 class="scientific-title mb-3" id="scientific-data-title">Характеристики</h2>
-                    <p class="scientific-note">Земля и Солнце · справочные значения округлены</p>
-
-                    <section aria-labelledby="physics-title">
-                        <h3 id="physics-title">Физика</h3>
-                        <dl class="scientific-values">
-                            <div><dt>Масса</dt><dd>1 <span>M⊕</span></dd></div>
-                            <div><dt>Радиус</dt><dd>1 <span>R⊕</span></dd></div>
-                            <div><dt>Средняя плотность</dt><dd>5,51 <span>г/см³</span></dd></div>
-                            <div><dt>Гравитация у поверхности</dt><dd>9,81 <span>м/с²</span></dd></div>
-                            <div><dt>Скорость убегания</dt><dd>11,19 <span>км/с</span></dd></div>
-                            <div><dt>Равновесная температура</dt><dd>≈ 255 <span>K</span></dd></div>
-                            <div><dt>Поток излучения</dt><dd>1 <span>S⊕</span></dd></div>
+                        <!-- Справочные данные Земли и Солнца до выбора планеты из каталога. -->
+                        <dl class="planet-highlights mb-0" aria-label="Основные характеристики Земли">
+                            <div>
+                                <dt>Радиус</dt>
+                                <dd>1 <span>R⊕</span></dd>
+                            </div>
+                            <div>
+                                <dt>Орбитальный период</dt>
+                                <dd>365,26 <span>дня</span></dd>
+                            </div>
+                            <div>
+                                <dt>Поток излучения</dt>
+                                <dd>1 <span>S⊕</span></dd>
+                            </div>
+                            <div>
+                                <dt>Расстояние до Солнца</dt>
+                                <dd>1 <span>а.е.</span></dd>
+                            </div>
                         </dl>
-                        <p class="scientific-note">Равновесная температура — оценка при альбедо 0,3 и равномерном перераспределении тепла, без парникового эффекта. Это не температура поверхности.</p>
-                    </section>
 
-                    <section aria-labelledby="orbit-title">
-                        <h3 id="orbit-title">Орбита</h3>
-                        <dl class="scientific-values">
-                            <div><dt>Орбитальный период</dt><dd>365,26 <span>дня</span></dd></div>
-                            <div><dt>Большая полуось</dt><dd>1 <span>а.е.</span></dd></div>
-                            <div><dt>Эксцентриситет</dt><dd>0,0167</dd></div>
-                        </dl>
-                        {% include "./app/cmp/orbit/index.html" %}
-                    </section>
+                    </div>
 
-                    <section aria-labelledby="star-title">
-                        <h3 id="star-title">Солнце</h3>
-                        <dl class="scientific-values">
-                            <div><dt>Спектральный класс</dt><dd>G2V</dd></div>
-                            <div><dt>Эффективная температура</dt><dd>5 772 <span>K</span></dd></div>
-                            <div><dt>Масса</dt><dd>1 <span>M☉</span></dd></div>
-                            <div><dt>Радиус</dt><dd>1 <span>R☉</span></dd></div>
-                            <div><dt>Светимость</dt><dd>1 <span>L☉</span></dd></div>
-                            <div><dt>Возраст</dt><dd>≈ 4,6 <span>млрд лет</span></dd></div>
-                            <div><dt>Звёзд в системе</dt><dd>1</dd></div>
-                        </dl>
-                        <p class="scientific-note mb-0">Другие планеты: Меркурий, Венера, Марс, Юпитер, Сатурн, Уран, Нептун.</p>
-                    </section>
+                    <div class="scientific-details" id="planet-details" role="region" aria-label="Характеристики и описание Земли" hidden>
+                        <h2 class="scientific-title mb-3" id="scientific-data-title">Характеристики</h2>
+                        <p class="scientific-note">Земля и Солнце · справочные значения округлены</p>
 
-                    <section class="planet-ai-description" aria-labelledby="ai-description-title">
-                        <h3 id="ai-description-title">ИИ-описание</h3>
-                        <p class="scientific-note mb-0">Описание ещё не подготовлено.</p>
-                    </section>
+                        {% include "./app/cmp/esi-explanation/index.html" %}
+
+                        <section aria-labelledby="physics-title">
+                            <h3 id="physics-title">Физика</h3>
+                            <dl class="scientific-values">
+                                <div><dt>Масса</dt><dd>1 <span>M⊕</span></dd></div>
+                                <div><dt>Радиус</dt><dd>1 <span>R⊕</span></dd></div>
+                                <div><dt>Средняя плотность</dt><dd>5,51 <span>г/см³</span></dd></div>
+                                <div><dt>Гравитация у поверхности</dt><dd>9,81 <span>м/с²</span></dd></div>
+                                <div><dt>Скорость убегания</dt><dd>11,19 <span>км/с</span></dd></div>
+                                <div><dt>Равновесная температура</dt><dd>≈ 255 <span>K</span></dd></div>
+                                <div><dt>Поток излучения</dt><dd>1 <span>S⊕</span></dd></div>
+                            </dl>
+                            <p class="scientific-note">Равновесная температура — оценка при альбедо 0,3 и равномерном перераспределении тепла, без парникового эффекта. Это не температура поверхности.</p>
+                        </section>
+
+                        <section aria-labelledby="orbit-title">
+                            <h3 id="orbit-title">Орбита</h3>
+                            <dl class="scientific-values">
+                                <div><dt>Орбитальный период</dt><dd>365,26 <span>дня</span></dd></div>
+                                <div><dt>Большая полуось</dt><dd>1 <span>а.е.</span></dd></div>
+                                <div><dt>Эксцентриситет</dt><dd>0,0167</dd></div>
+                            </dl>
+                            {% include "./app/cmp/orbit/index.html" %}
+                        </section>
+
+                        <section aria-labelledby="star-title">
+                            <h3 id="star-title">Солнце</h3>
+                            {% include "./app/cmp/star-model/index.html" %}
+                            <dl class="scientific-values">
+                                <div><dt>Спектральный класс</dt><dd>G2V</dd></div>
+                                <div><dt>Эффективная температура</dt><dd>5 772 <span>K</span></dd></div>
+                                <div><dt>Масса</dt><dd>1 <span>M☉</span></dd></div>
+                                <div><dt>Радиус</dt><dd>1 <span>R☉</span></dd></div>
+                                <div><dt>Светимость</dt><dd>1 <span>L☉</span></dd></div>
+                                <div><dt>Возраст</dt><dd>≈ 4,6 <span>млрд лет</span></dd></div>
+                                <div><dt>Звёзд в системе</dt><dd>1</dd></div>
+                            </dl>
+                            <p class="scientific-note mb-0">Другие планеты: Меркурий, Венера, Марс, Юпитер, Сатурн, Уран, Нептун.</p>
+                        </section>
+
+                        <section class="planet-ai-description" aria-labelledby="ai-description-title">
+                            <h3 id="ai-description-title">ИИ-описание</h3>
+                            <p class="scientific-note mb-0">Описание ещё не подготовлено.</p>
+                        </section>
+                    </div>
                 </div>
             </section>
             </div>

@@ -98,11 +98,33 @@ section.table
             position: relative
             margin-bottom: 30px
 
-            > .d-flex:first-child
+            > .planet-select
                 min-width: 0
+                flex: 1 1 0
+                padding: 0
+                background: transparent
+                border: 0
+                text-align: left
 
-            .index, .values
+            .index
                 flex-shrink: 0
+
+            .planet-select:focus-visible
+                outline: 2px solid var(--color-accent-1)
+                outline-offset: 3px
+                border-radius: 10px
+
+            &.comparison-unavailable
+                opacity: .35
+                filter: grayscale(1)
+                cursor: not-allowed
+
+                .planet-select
+                    cursor: not-allowed
+
+            &.compared .index
+                outline: 2px solid var(--color-accent-1)
+                outline-offset: 2px
             
 
             .index
@@ -116,18 +138,34 @@ section.table
                     font-family: "Consolas"
                     transition: inherit
                     font-weight: 600
+                    letter-spacing: normal
+
+                .val
+                    font-size: 18px
+
+                .desc
+                    font-size: 10px
+                    font-weight: 400
+
+                &.good .val
+                    color: #46EE71
+                &.normal .val
+                    color: #eec146
+                &.bad .val
+                    color: #ee4646
             
             .name
                 min-width: 0
 
-                h5
+                .planet-name
+                    display: block
                     font-size: 18px
                     white-space: nowrap
                     text-overflow: ellipsis
                     overflow: hidden
                     letter-spacing: 3px
                     transition: 0.3s ease-in-out
-                span
+                .star-name
                     display: block
                     white-space: nowrap
                     overflow: hidden
@@ -153,14 +191,14 @@ section.table
                         color: var(--color-text-2)
             
 
-            &:hover:not(.selected)
+            &:hover:not(.selected):not(.comparison-unavailable)
 
                 .index 
                     span
                         color: var(--color-accent-1)
                 
                 .name
-                    h5
+                    .planet-name
                         color: var(--color-accent-1)
                         letter-spacing: 3px
             
@@ -169,9 +207,12 @@ section.table
                     background: var(--color-accent-1)
                     span
                         color: var(--color-block-background-2)
+
+                        &.val
+                            text-shadow: 0 0 3px var(--color-block-background-2)
                 
                 .name
-                    h5
+                    .planet-name
                         color: var(--color-accent-1)
             
             &::after

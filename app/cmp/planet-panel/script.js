@@ -10,6 +10,7 @@ if (workspace && toggle && details) {
         toggle.setAttribute("aria-expanded", String(expanded));
         toggle.querySelector("span").textContent = expanded ? "Свернуть подробности" : "Подробнее о планете";
         details.hidden = !expanded;
+        if (!expanded) details.closest('.scrollbox').scrollTop = 0;
     }
 
     toggle.addEventListener("click", () => {

@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { comparisonLayout, getPlanetRadius } from './comparison.js';
+import { createPlanetAppearance, createSeededRandom, getAppearanceIdentity, hashPlanetName } from './appearance.js';
+import { createSurfacePixels } from './surface-pixels.js';
 
 
 
@@ -50,6 +53,10 @@ let pendingRenderSize = initialRenderSize;
 let renderSize = initialRenderSize;
 
 const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+const comparisonCamera = new THREE.OrthographicCamera(-3, 3, 3, -3, 0.1, 100);
+comparisonCamera.position.z = 10;
+let activeComparison = null;
+let selectedPlanetId = 'earth-reference';
 camera.position.set(0, 0, 4);
 camera.lookAt(0, 0, 0);
 
@@ -66,9 +73,10 @@ renderer.setSize(initialRenderSize, initialRenderSize, false);
 // 1. ПРОСТЕЙШИЙ БЕСШОВНЫЙ 3D-ШУМ (FBM)
 // ==========================================
 const perm = new Uint8Array(512);
+const noiseRandom = createSeededRandom(hashPlanetName('earth-surface-noise'));
 for (let i = 0; i < 256; i++) perm[i] = i;
 for (let i = 255; i > 0; i--) {
-  const j = Math.floor(Math.random() * (i + 1));
+  const j = Math.floor(noiseRandom() * (i + 1));
   [perm[i], perm[j]] = [perm[j], perm[i]];
 }
 for (let i = 0; i < 256; i++) perm[i + 256] = perm[i];
@@ -140,13 +148,25 @@ function mixRgb(c1, c2, t) {
 // ==========================================
 function generateSurfaceTexture(config) {
   const width = 512;
-  const height = 512;
+  const height = ['rocky', 'hazy', 'gas-bands'].includes(config.style) ? 256 : 512;
   const texCanvas = document.createElement('canvas');
   texCanvas.width = width;
   texCanvas.height = height;
   const ctx = texCanvas.getContext('2d');
 
-  if (config.style === 'bands') {
+  if (['rocky', 'hazy', 'gas-bands'].includes(config.style)) {
+    const image = ctx.createImageData(width, height);
+    image.data.set(createSurfacePixels(config, width, height));
+    ctx.putImageData(image, 0, 0);
+  } else if (config.style === 'bands') {
+    // Повторная генерация для той же планеты сохраняет рисунок полос.
+    let bandSeed = Math.floor((config.noiseSeed ?? 12) * 10000) || 1;
+    const random = () => {
+      bandSeed ^= bandSeed << 13;
+      bandSeed ^= bandSeed >>> 17;
+      bandSeed ^= bandSeed << 5;
+      return (bandSeed >>> 0) / 4294967296;
+    };
     const grad = ctx.createLinearGradient(0, 0, 0, height);
     grad.addColorStop(0, config.secondaryColor);
     grad.addColorStop(0.5, config.primaryColor);
@@ -155,17 +175,35 @@ function generateSurfaceTexture(config) {
     ctx.fillRect(0, 0, width, height);
 
     for (let i = 0; i < 18; i++) {
-      const y = Math.random() * height;
-      const bandH = 6 + Math.random() * 24;
+      const y = random() * height;
+      const bandH = 6 + random() * 24;
       const bandGrad = ctx.createLinearGradient(0, y, 0, y + bandH);
       bandGrad.addColorStop(0, 'transparent');
       bandGrad.addColorStop(0.5, config.detailColor);
       bandGrad.addColorStop(1, 'transparent');
 
-      ctx.globalAlpha = 0.1 + Math.random() * 0.22;
+      ctx.globalAlpha = 0.1 + random() * 0.22;
       ctx.fillStyle = bandGrad;
       ctx.fillRect(0, y, width, bandH);
     }
+    // Полосы не должны быть осесимметричными: иначе вращение поверхности не видно.
+    // Периодические неоднородности по долготе сохраняют бесшовность текстуры.
+    const bandImage = ctx.getImageData(0, 0, width, height);
+    for (let y = 0; y < height; y++) {
+      const latitude = y / height * Math.PI;
+      for (let x = 0; x < width; x++) {
+        const longitude = x / width * Math.PI * 2;
+        const variation = 1 + 0.18 * Math.sin(latitude) * (
+          Math.sin(longitude * 3 + Math.sin(latitude * 5) * 2 + (config.noiseSeed ?? 12))
+          + 0.4 * Math.sin(longitude * 7 - latitude * 9)
+        );
+        const index = (y * width + x) * 4;
+        for (let channel = 0; channel < 3; channel++) {
+          bandImage.data[index + channel] *= variation;
+        }
+      }
+    }
+    ctx.putImageData(bandImage, 0, 0);
   } else {
     const imgData = ctx.createImageData(width, height);
     const data = imgData.data;
@@ -179,7 +217,7 @@ function generateSurfaceTexture(config) {
     const scale = config.noiseScale ?? 1.9;
     const octaves = Math.max(1, Math.min(6, Math.round(config.noiseOctaves ?? 4)));
     const threshold = config.landThreshold ?? 0.01;
-    const seed = typeof config.noiseSeed === 'number' ? config.noiseSeed : Math.random() * 100;
+    const seed = typeof config.noiseSeed === 'number' ? config.noiseSeed : 12;
 
     for (let y = 0; y < height; y++) {
       const phi = (y / height) * Math.PI;
@@ -239,7 +277,15 @@ const sphereMat = new THREE.MeshStandardMaterial({
     metalness: 0.05
 });
 const planetMesh = new THREE.Mesh(sphereGeo, sphereMat);
+const earthTexture = sphereMat.map;
+planetMesh.userData.planetId = 'earth-reference';
 planetGroup.add(planetMesh);
+const comparisonGroup = new THREE.Group();
+const comparisonMaterial = new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.05 });
+const comparisonMesh = new THREE.Mesh(sphereGeo, comparisonMaterial);
+comparisonGroup.add(comparisonMesh);
+comparisonGroup.visible = false;
+scene.add(comparisonGroup);
 
 // Атмосфера
 const atmoGeo = new THREE.SphereGeometry(1.04, 64, 64);
@@ -266,7 +312,35 @@ const atmoMat = new THREE.ShaderMaterial({
     }
     `
 });
-planetGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
+const atmosphereMesh = new THREE.Mesh(atmoGeo, atmoMat);
+planetGroup.add(atmosphereMesh);
+const comparisonAtmosphereMaterial = atmoMat.clone();
+const comparisonAtmosphereMesh = new THREE.Mesh(atmoGeo, comparisonAtmosphereMaterial);
+comparisonGroup.add(comparisonAtmosphereMesh);
+
+// Храним лёгкие настройки по имени и классу; на GPU — только видимые текстуры и Земля.
+const appearances = new Map();
+function getAppearance(planet) {
+    if (planet.id === 'earth-reference') return { ...planetState, roughness: 0.85, metalness: 0.05, bumpScale: 0, showAtmosphere: true, key: 'earth-reference' };
+    const { key } = getAppearanceIdentity(planet);
+    if (!appearances.has(key)) appearances.set(key, createPlanetAppearance(planet));
+    return appearances.get(key);
+}
+
+function setSurface(mesh, planet) {
+    const config = getAppearance(planet);
+    if (mesh.userData.appearanceKey === config.key) return;
+    if (mesh.material.map && mesh.material.map !== earthTexture) mesh.material.map.dispose();
+    mesh.material.map = planet.id === 'earth-reference' ? earthTexture : generateSurfaceTexture(config);
+    mesh.material.color.set('#ffffff');
+    mesh.material.roughness = config.roughness;
+    mesh.material.metalness = config.metalness;
+    mesh.material.bumpMap = config.bumpScale > 0 ? mesh.material.map : null;
+    mesh.material.bumpScale = config.bumpScale;
+    mesh.material.needsUpdate = true;
+    mesh.userData.planetId = planet.id;
+    mesh.userData.appearanceKey = config.key;
+}
 
 // Кольца
 const ringGeo = new THREE.RingGeometry(1.35, 1.85, 64);
@@ -297,6 +371,8 @@ const maxZoom = 7.0;
 let targetZoom = 4.25;
 
 canvas.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    canvas.setPointerCapture(e.pointerId);
     isDragging = true;
     velocity.x = 0; // Мгновенно гасим остаточную инерцию при захвате
     velocity.y = 0;
@@ -305,6 +381,13 @@ canvas.addEventListener('pointerdown', (e) => {
 
 window.addEventListener('pointerup', () => {
     isDragging = false;
+});
+canvas.addEventListener('pointercancel', () => { isDragging = false; });
+canvas.addEventListener('lostpointercapture', () => { isDragging = false; });
+window.addEventListener('blur', () => {
+    isDragging = false;
+    velocity.x = 0;
+    velocity.y = 0;
 });
 
 window.addEventListener('pointermove', (e) => {
@@ -342,6 +425,9 @@ const axisMat = new THREE.LineBasicMaterial({
 const axisLine = new THREE.Line(axisGeo, axisMat);
 axisLine.scale.y = planetState.axisLength;
 axisGroup.add(axisLine);
+const comparisonAxisGroup = axisGroup.clone();
+comparisonGroup.add(comparisonAxisGroup);
+comparisonGroup.rotation.z = THREE.MathUtils.degToRad(planetState.tiltDegrees);
 
 
 
@@ -370,15 +456,57 @@ window.updatePlanet = function(newProps) {
       planetGroup.rotation.z = THREE.MathUtils.degToRad(planetState.tiltDegrees);
 
       axisGroup.visible = planetState.showAxis;
+      comparisonAxisGroup.visible = planetState.showAxis;
       axisMat.color.set(planetState.axisColor);
-      poleMat.color.set(planetState.axisColor);
       axisMat.opacity = planetState.axisOpacity;
-      poleMat.opacity = planetState.axisOpacity;
 
       axisLine.scale.y = planetState.axisLength;
-      northPole.position.y = planetState.axisLength / 2;
-      southPole.position.y = -planetState.axisLength / 2;
+      comparisonAxisGroup.children[0].scale.y = planetState.axisLength;
     };
+
+// Один renderer и две сферы: контекст и геометрия переиспользуются при переключении.
+export function setScenePlanets(selected, comparison = null) {
+    const hasRadius = getPlanetRadius(selected) !== null;
+    if (selectedPlanetId !== selected.id) {
+        selectedPlanetId = selected.id;
+        planetGroup.rotation.set(0, 0, THREE.MathUtils.degToRad(planetState.tiltDegrees));
+        velocity.x = 0;
+        velocity.y = 0;
+    }
+    // Внешний вид экзопланет условный; данные о поверхности не предполагаем.
+    setSurface(planetMesh, selected);
+    const appearance = getAppearance(selected);
+    atmoMat.uniforms.glowColor.value.set(appearance.atmosphereColor);
+    atmosphereMesh.visible = appearance.showAtmosphere;
+    ringMesh.visible = false;
+    // Линия обозначает ось условной модели, а не измеренный наклон экзопланеты.
+    axisGroup.visible = planetState.showAxis;
+    comparisonAxisGroup.visible = planetState.showAxis;
+    planetGroup.visible = hasRadius;
+    activeComparison = comparison ? comparisonLayout(getPlanetRadius(selected), getPlanetRadius(comparison)) : null;
+    comparisonGroup.visible = activeComparison !== null;
+    if (activeComparison) {
+        setSurface(comparisonMesh, comparison);
+        const comparedAppearance = getAppearance(comparison);
+        comparisonAtmosphereMaterial.uniforms.glowColor.value.set(comparedAppearance.atmosphereColor);
+        comparisonAtmosphereMesh.visible = comparedAppearance.showAtmosphere;
+    } else if (comparisonMesh.userData.planetId) {
+        if (comparisonMaterial.map && comparisonMaterial.map !== earthTexture) comparisonMaterial.map.dispose();
+        comparisonMaterial.map = null;
+        comparisonMaterial.bumpMap = null;
+        comparisonMaterial.needsUpdate = true;
+        delete comparisonMesh.userData.planetId;
+        delete comparisonMesh.userData.appearanceKey;
+    }
+    planetGroup.scale.setScalar(activeComparison?.firstScale ?? 1);
+    planetGroup.position.x = activeComparison?.firstX ?? 0;
+    comparisonGroup.scale.setScalar(activeComparison?.secondScale ?? 1);
+    comparisonGroup.position.x = activeComparison?.secondX ?? 0;
+    canvas.setAttribute('aria-label', comparison
+        ? `Сравнение размеров: ${selected.name ?? 'Планета'} и ${comparison.name ?? 'Планета'}`
+        : `Условная 3D-визуализация: ${selected.name ?? 'Планета'}`);
+    canvas.title = 'Художественный материал по размерному классу. Цвета, рельеф и свечение не являются измерениями поверхности или атмосферы.';
+}
 
 
 // 6. Адаптив и цикл рендера
@@ -388,8 +516,11 @@ window.updatePlanet = function(newProps) {
 //     renderer.setSize(window.innerWidth, window.innerHeight);
 // });
 
-function animate() {
+let lastFrameTime = null;
+function animate(time) {
     requestAnimationFrame(animate);
+    const deltaSeconds = lastFrameTime === null ? 0 : Math.min((time - lastFrameTime) / 1000, 0.05);
+    lastFrameTime = time;
 
     // Изменение буфера очищает canvas, поэтому сразу рисуем в нём новый кадр.
     // Раскрытие панели меняет только CSS-размер квадратного canvas.
@@ -401,6 +532,8 @@ function animate() {
     // Применяем вращение от мыши и плавно гасим инерцию
     planetGroup.rotation.y += velocity.x;
     planetGroup.rotation.x = Math.max(-1.2, Math.min(1.2, planetGroup.rotation.x + velocity.y));
+    comparisonGroup.rotation.y += velocity.x;
+    comparisonGroup.rotation.x = Math.max(-1.2, Math.min(1.2, comparisonGroup.rotation.x + velocity.y));
     velocity.x *= 0.92;
     velocity.y *= 0.92;
 
@@ -409,12 +542,22 @@ function animate() {
 
     // Крутим планету автоматически ТОЛЬКО когда она не захвачена мышью
     if (!isDragging) {
-    planetMesh.rotation.y += planetState.rotationSpeed;
+    planetMesh.rotation.y += planetState.rotationSpeed * deltaSeconds * 60;
+    comparisonMesh.rotation.y += planetState.rotationSpeed * deltaSeconds * 60;
     }
 
-    renderer.render(scene, camera);
+    if (activeComparison) {
+        // Единая ортографическая проекция: видимые диаметры строго пропорциональны R⊕.
+        const extent = activeComparison.halfExtent * camera.position.z / minZoom;
+        comparisonCamera.left = -extent;
+        comparisonCamera.right = extent;
+        comparisonCamera.top = extent;
+        comparisonCamera.bottom = -extent;
+        comparisonCamera.updateProjectionMatrix();
+    }
+    renderer.render(scene, activeComparison ? comparisonCamera : camera);
 }
-animate();
+requestAnimationFrame(animate);
 
 
 // 6. Автоматическое отслеживание размеров родительского контейнера

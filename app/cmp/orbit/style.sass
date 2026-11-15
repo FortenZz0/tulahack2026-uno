@@ -1,6 +1,13 @@
 .orbit-view
     padding: 1rem 0
 
+    [hidden]
+        display: none !important
+
+    button:disabled, input:disabled
+        opacity: .4
+        cursor: not-allowed
+
     h4
         font-size: .85rem
         font-weight: 500
@@ -64,6 +71,9 @@
         stroke: var(--color-accent-1)
         stroke-width: 2
 
+    .orbit-track
+        stroke-width: 1.5
+
     .orbit-sun
         fill: #edc66c
 
@@ -109,18 +119,39 @@
             border-radius: 50%
             flex-shrink: 0
 
+    .orbit-time-controls
+        margin-top: 1rem
+        padding: .75rem
+        border: 1px solid transparent
+        border-radius: 12px
+        background: var(--color-block-background-2)
+
+        &.is-pinned
+            position: sticky
+            bottom: 0
+            z-index: 3
+            border-color: var(--color-block-border)
+            box-shadow: 0 -8px 24px rgba(0, 0, 0, .3)
+
     .orbit-controls
-        display: flex
-        flex-wrap: wrap
-        justify-content: space-between
+        display: grid
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)
         align-items: center
         gap: .5rem
         font-size: .75rem
         margin-bottom: .75rem
 
+        button
+            width: 100%
+            max-width: 12rem
+
         output
             color: var(--color-text-2)
             font-variant-numeric: tabular-nums
+            font-family: Consolas, 'Courier New', monospace
+            text-align: right
+            white-space: nowrap
+            min-width: 0
 
     .orbit-time-label
         color: var(--color-text-2)
@@ -142,10 +173,13 @@
             letter-spacing: normal
 
     .orbit-readings
-        display: flex
-        flex-wrap: wrap
+        display: grid
+        grid-template-columns: repeat(2, minmax(0, 1fr))
         gap: .5rem 1rem
         margin: 1rem 0 .5rem
+
+        > div
+            min-width: 0
 
         dt
             color: var(--color-text-2)
@@ -156,10 +190,25 @@
             margin: .25rem 0 0
             font-size: .85rem
             font-variant-numeric: tabular-nums
+            font-family: Consolas, 'Courier New', monospace
+            white-space: nowrap
+            min-height: 1.5em
 
     .orbit-status
+        display: grid
         font-size: .75rem
         color: #61be98
+        line-height: 1.6
+
+        // Все возможные статусы лежат в одной ячейке и резервируют максимальную высоту.
+        .orbit-status-reserve
+            visibility: hidden
+
+        > span
+            grid-area: 1 / 1
+            font: inherit
+            color: inherit
+            letter-spacing: normal
 
         &[data-zone="optimistic"]
             color: #91b6f5
@@ -167,5 +216,13 @@
         &[data-zone="outside"]
             color: #eec146
 
+        &[data-zone="unknown"]
+            color: var(--color-text-2)
+
     a
         color: var(--color-accent-1)
+
+// Маска прокрутки не должна затемнять закреплённые ползунок и кнопки.
+.scientific-scroll.orbit-controls-pinned
+    -webkit-mask-image: none
+    mask-image: none

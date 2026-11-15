@@ -1,9 +1,10 @@
 // Геометрия визуализации: фаза — доля времени от перицентра, не угол.
 // Единицы: большая полуось в а.е., светимость относительно Солнца.
-export function orbitPosition(phase, semiMajorAxis, eccentricity, luminosity) {
-    if (![phase, semiMajorAxis, eccentricity, luminosity].every(Number.isFinite)
-        || semiMajorAxis <= 0 || luminosity <= 0 || eccentricity < 0 || eccentricity >= 1) {
-        throw new RangeError("Expected finite orbital parameters: a > 0, 0 <= e < 1, L > 0");
+export function orbitPosition(phase, semiMajorAxis, eccentricity, luminosity = null) {
+    if (![phase, semiMajorAxis, eccentricity].every(Number.isFinite)
+        || semiMajorAxis <= 0 || eccentricity < 0 || eccentricity >= 1
+        || (luminosity !== null && (!Number.isFinite(luminosity) || luminosity <= 0))) {
+        throw new RangeError("Expected finite orbital parameters: a > 0, 0 <= e < 1, optional L > 0");
     }
 
     const meanAnomaly = ((phase % 1 + 1) % 1) * 2 * Math.PI;
@@ -20,5 +21,5 @@ export function orbitPosition(phase, semiMajorAxis, eccentricity, luminosity) {
     const y = semiMajorAxis * Math.sqrt(1 - eccentricity ** 2) * Math.sin(anomaly);
     const radius = semiMajorAxis * (1 - eccentricity * Math.cos(anomaly));
 
-    return { x, y, radius, flux: luminosity / radius ** 2 };
+    return { x, y, radius, flux: luminosity === null ? null : luminosity / radius ** 2 };
 }

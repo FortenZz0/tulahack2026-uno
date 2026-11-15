@@ -75,6 +75,9 @@ main
     > .planet-info
         flex: 1 1 0
 
+        .content, h1, .planet-heading, .planet-class, .planet-star
+            transition: .3s ease-in-out
+
     > .planet-panel
         flex: 0 0 164px
         padding: 0 1.25rem 1rem
@@ -200,13 +203,15 @@ main
 
     .scientific-scroll
         padding-right: .75rem
-        padding-top: 1rem
-        border-top: 1px solid var(--color-block-border)
         scrollbar-gutter: stable
 
         &:focus-visible
             outline: 1px solid var(--color-accent-1)
             outline-offset: -1px
+
+    .scientific-details
+        padding-top: 1rem
+        border-top: 1px solid var(--color-block-border)
 
         > section + section
             margin-top: 1.5rem
