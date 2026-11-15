@@ -1,0 +1,24 @@
+{
+  "name": "th-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker для доступа к NASA Exoplanet Archive API.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dfilirini/tulahack2026-uno-exoworker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/dfilirini/tulahack2026-uno-exoworker/issues"
+  },
+  "homepage": "https://github.com/dfilirini/tulahack2026-uno-exoworker#readme",
+  "devDependencies": {
+    "wrangler": "^4.162.0"
+  }
+}

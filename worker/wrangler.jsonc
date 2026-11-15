@@ -1,0 +1,31 @@
+{
+  "name": "tulahack2026-uno",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-14",
+
+  "rules": [
+    { "type": "Text", "globs": ["**/*.prompt.md"], "fallthrough": true }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "DESCRIPTION_GENERATOR", "class_name": "DescriptionGenerator" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1-descriptions", "new_sqlite_classes": ["DescriptionGenerator"] }
+  ],
+
+  // обновление каждые 10 минут
+  "triggers": {
+    "crons": ["*/10 * * * *"]
+  },
+
+  // храним ответ NASA
+  "kv_namespaces": [
+    {
+      "binding": "PLANETS_KV",
+      "id": "a78a4806f59543a6b7156158e920d95e"
+    }
+  ]
+}
