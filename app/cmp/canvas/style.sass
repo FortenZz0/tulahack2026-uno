@@ -1,8 +1,113 @@
 section.planet-info
 
-    > .h-100
+    min-width: 0
+    min-height: 0
+    position: relative
+    overflow: hidden
+    background: transparent
+
+    > .content
+        position: absolute
+        top: 0
+        left: 0
+        right: 0
+        z-index: 1
+        pointer-events: none
+        overflow-wrap: anywhere
+
+    &.comparison-enabled > .content
+        right: clamp(132px, 32%, 200px)
+
+    .comparison-toggle
+        position: absolute
+        z-index: 2
+        top: 1.5rem
+        right: 1.5rem
+        width: clamp(112px, 28%, 180px)
+        min-height: 40px
+        padding: .5rem .75rem
+        border: 1px solid var(--color-block-border)
+        border-radius: 10px
+        background: var(--color-block-background-2)
+        color: var(--color-accent-1)
+        font-size: .8rem
+
+        &[hidden]
+            display: none
+
+        span
+            color: inherit
+            letter-spacing: normal
+
+        &[aria-pressed="true"]
+            background: var(--color-accent-1)
+            color: var(--color-block-background-2)
+
+        &:disabled
+            opacity: .4
+            cursor: not-allowed
+
+        &:focus-visible
+            outline: 2px solid var(--color-accent-1)
+            outline-offset: 3px
+
+    .planet-heading
+        display: flex
+        flex-wrap: wrap
+        align-items: baseline
+        justify-content: space-between
+        gap: .25rem 1rem
+
+    .planet-class
+        color: var(--color-text-2)
+        font-size: .8rem
+        letter-spacing: .04em
+
+    .planet-class
+        margin-top: .25rem
+
+    .planet-star
+        display: block
+        margin-top: .5rem
+        font-size: .85rem
+        letter-spacing: .04em
+
+    .comparison-caption
+        position: absolute
+        bottom: .5rem
+        left: 1rem
+        right: 1rem
+        display: flex
+        align-items: center
+        justify-content: center
+        flex-wrap: wrap
+        gap: .5rem 1rem
+        padding: .5rem
+        background: rgba(7, 9, 19, .85)
+        border-radius: 10px
+        font-size: .75rem
+
+        &[hidden]
+            display: none
+
+        p
+            overflow-wrap: anywhere
+
+    .scene-notice
+        position: absolute
+        top: 55%
+        left: 1rem
+        right: 1rem
+        text-align: center
+        color: var(--color-text-2)
+        font-size: .85rem
+
+    > .planet-stage
         height: 100%
-        aspect-ratio: 1 / 1
+        width: 100%
+        display: grid
+        place-items: center
+        container-type: size
         // flex: 0 0 auto
 
     // > .content
@@ -10,16 +115,18 @@ section.planet-info
     //     min-width: 0
 
     .planet-canvas
-        border-radius: 50%
-        height: 100%
-        background: var(--color-block-background-2)
+        // Меняем только экранный размер: буфер WebGL не пересоздаётся при раскрытии панели.
+        width: min(100cqw, 100cqh)
+        height: min(100cqw, 100cqh)
         overflow: hidden
-        scale: .82
 
         canvas
+            display: block
             cursor: grab
             width: 100%
             height: 100%
+            // Вертикальный жест прокручивает страницу, горизонтальный вращает модель.
+            touch-action: pan-y pinch-zoom
 
             &:active
                 cursor: grabbing

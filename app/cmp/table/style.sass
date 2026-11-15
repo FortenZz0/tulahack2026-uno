@@ -1,7 +1,11 @@
 section.table
     display: flex
     flex-direction: column
+    min-width: 0
     min-height: 0
+
+    > h1, > span, > .search-field, > .planets-list
+        flex-shrink: 0
 
     .search-field
         background: var(--color-block-background-2)
@@ -97,6 +101,34 @@ section.table
             cursor: pointer
             position: relative
             margin-bottom: 30px
+
+            > .planet-select
+                min-width: 0
+                flex: 1 1 0
+                padding: 0
+                background: transparent
+                border: 0
+                text-align: left
+
+            .index
+                flex-shrink: 0
+
+            .planet-select:focus-visible
+                outline: 2px solid var(--color-accent-1)
+                outline-offset: 3px
+                border-radius: 10px
+
+            &.comparison-unavailable
+                opacity: .35
+                filter: grayscale(1)
+                cursor: not-allowed
+
+                .planet-select
+                    cursor: not-allowed
+
+            &.compared .index
+                outline: 2px solid var(--color-accent-1)
+                outline-offset: 2px
             
 
             .index
@@ -110,15 +142,39 @@ section.table
                     font-family: "Consolas"
                     transition: inherit
                     font-weight: 600
+                    letter-spacing: normal
+
+                .val
+                    font-size: 18px
+
+                .desc
+                    font-size: 10px
+                    font-weight: 400
+
+                &.good .val
+                    color: #46EE71
+                &.normal .val
+                    color: #eec146
+                &.bad .val
+                    color: #ee4646
             
             .name
-                h5
+                min-width: 0
+
+                .planet-name
+                    display: block
                     font-size: 18px
                     white-space: nowrap
                     text-overflow: ellipsis
+                    overflow: hidden
                     letter-spacing: 3px
                     transition: 0.3s ease-in-out
-                span
+                    color: white
+                .star-name
+                    display: block
+                    white-space: nowrap
+                    overflow: hidden
+                    text-overflow: ellipsis
                     font-size: 12px
                     i
                         color: inherit
@@ -136,27 +192,36 @@ section.table
                         color: #eec146
                     &.bad span             // >= 0
                         color: #ee4646
+                    &.unavailable span
+                        color: var(--color-text-2)
             
 
-            &:hover:not(.selected)
+            @media (hover: hover) and (pointer: fine)
+                &:hover:not(.selected):not(.comparison-unavailable)
 
-                .index 
-                    span
-                        color: var(--color-accent-1)
+                    .index
+                        span
+                            color: var(--color-accent-1)
                 
-                .name
-                    h5
-                        color: var(--color-accent-1)
-                        letter-spacing: 3px
+                    .name
+                        .planet-name
+                            color: var(--color-accent-1)
+                            letter-spacing: 3px
+
+            .planet-select:active
+                opacity: .7
             
             &.selected
                 .index 
                     background: var(--color-accent-1)
                     span
                         color: var(--color-block-background-2)
+
+                        &.val
+                            text-shadow: 0 0 3px var(--color-block-background-2)
                 
                 .name
-                    h5
+                    .planet-name
                         color: var(--color-accent-1)
             
             &::after
