@@ -278,6 +278,73 @@ const sphereMat = new THREE.MeshStandardMaterial({
 });
 const planetMesh = new THREE.Mesh(sphereGeo, sphereMat);
 const earthTexture = sphereMat.map;
+
+// Миниатюра использует геометрию и текстуру той же Земли, независимо от выбранной планеты.
+export function createEarthPreview(previewCanvas) {
+    if (!previewCanvas) return null;
+    let previewRenderer;
+    try {
+        previewRenderer = new THREE.WebGLRenderer({ canvas: previewCanvas, antialias: true, alpha: true });
+    } catch {
+        previewCanvas.replaceWith(document.createTextNode('🌍'));
+        return null;
+    }
+    previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    previewRenderer.setSize(60, 60, false);
+    const previewScene = new THREE.Scene();
+    const previewCamera = new THREE.PerspectiveCamera(45, 1, .1, 10);
+    previewCamera.position.z = 3.2;
+    const group = new THREE.Group();
+    group.rotation.z = THREE.MathUtils.degToRad(planetState.tiltDegrees);
+    const material = new THREE.MeshStandardMaterial({ map: earthTexture, roughness: .85, metalness: .05 });
+    const globe = new THREE.Mesh(sphereGeo, material);
+    group.add(globe);
+    previewScene.add(group);
+    const light = new THREE.DirectionalLight(0xffffff, 2);
+    light.position.set(-5, 3, 4);
+    previewScene.add(light, new THREE.AmbientLight(0xffffff, .35));
+
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let visible = false;
+    let frame = 0;
+    let lastTime = null;
+    let disposed = false;
+    function tick(time) {
+        frame = requestAnimationFrame(tick);
+        if (lastTime !== null && time - lastTime < 1000 / 30) return;
+        const delta = lastTime === null ? 0 : Math.min((time - lastTime) / 1000, .1);
+        lastTime = time;
+        globe.rotation.y += planetState.rotationSpeed * delta * 60;
+        previewRenderer.render(previewScene, previewCamera);
+    }
+    function update() {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        lastTime = null;
+        if (disposed || !visible || document.hidden) return;
+        previewRenderer.render(previewScene, previewCamera);
+        if (!motion.matches) frame = requestAnimationFrame(tick);
+    }
+    const observer = new IntersectionObserver(entries => {
+        visible = entries.some(entry => entry.isIntersecting);
+        update();
+    });
+    observer.observe(previewCanvas);
+    document.addEventListener('visibilitychange', update);
+    motion.addEventListener('change', update);
+    return {
+        dispose() {
+            disposed = true;
+            cancelAnimationFrame(frame);
+            observer.disconnect();
+            document.removeEventListener('visibilitychange', update);
+            motion.removeEventListener('change', update);
+            material.dispose();
+            previewRenderer.dispose();
+        },
+    };
+}
+
 planetMesh.userData.planetId = 'earth-reference';
 planetGroup.add(planetMesh);
 const comparisonGroup = new THREE.Group();
@@ -505,7 +572,6 @@ export function setScenePlanets(selected, comparison = null) {
     canvas.setAttribute('aria-label', comparison
         ? `Сравнение размеров: ${selected.name ?? 'Планета'} и ${comparison.name ?? 'Планета'}`
         : `Условная 3D-визуализация: ${selected.name ?? 'Планета'}`);
-    canvas.title = 'Художественный материал по размерному классу. Цвета, рельеф и свечение не являются измерениями поверхности или атмосферы.';
 }
 
 

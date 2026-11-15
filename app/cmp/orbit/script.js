@@ -163,7 +163,8 @@ export function createOrbitView(root) {
     }
     function setPlaying(value) {
         playing = Boolean(value && data.hasOrbit && data.periodDays !== null);
-        play.textContent = playing ? 'Пауза' : 'Воспроизвести';
+        play.setAttribute('aria-label', playing ? 'Пауза' : 'Воспроизвести');
+        play.title = playing ? 'Пауза' : 'Воспроизвести';
         play.setAttribute('aria-pressed', String(playing));
         syncAnimation();
     }
@@ -230,7 +231,7 @@ export function createOrbitView(root) {
             find('[data-orbit-star-name]').textContent = starName.length > 24 ? `${starName.slice(0, 23)}…` : starName;
             find('[data-orbit-period]').textContent = data.periodDays !== null ? `1 оборот · ${format(data.periodDays)} дня` : '1 оборот · период неизвестен';
             find('[data-orbit-availability]').textContent =
-                `a = ${format(data.semiMajorAxis, 5)} а.е. · e = ${format(data.eccentricity, 5)} · вид сверху на плоскость орбиты`;
+                `Большая полуось = ${format(data.semiMajorAxis, 5)} а.е. Эксцентриситет = ${format(data.eccentricity, 5)}`;
             if (data.hasOrbit) {
                 const track = find('[data-orbit-track]');
                 track.setAttribute('cx', mapX(-data.semiMajorAxis * data.eccentricity));
@@ -241,10 +242,6 @@ export function createOrbitView(root) {
             drawZones();
             drawFlux();
             find('[data-orbit-flux]').parentElement.hidden = data.luminosity === null;
-            const explanation = [];
-            if (data.hasOrbit && data.periodDays !== null) explanation.push(`Анимация ускорена: один оборот (${format(data.periodDays)} дня) за ${animationSeconds} секунд. Положение — по уравнению Кеплера.`);
-            if (data.multipleStars) explanation.push('Схема идеализирует кеплеровскую орбиту; влияние других звёзд не учитывается.');
-            find('[data-orbit-explanation]').textContent = explanation.join(' ');
             render();
             syncControls();
             // Автовоспроизведение отключено при предпочтении уменьшенного движения.

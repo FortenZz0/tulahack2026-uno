@@ -7,6 +7,10 @@ import { createPlanetSelection } from "./cmp/planet-selection/script.js";
 import { createStarModel } from "./cmp/star-model/script.js";
 import { createOrbitView } from "./cmp/orbit/script.js";
 import { createEsiExplanation } from "./cmp/esi-explanation/script.js";
+import { createDescriptionClient } from "./cmp/ai-description/client.js";
+import { createAiDescription } from "./cmp/ai-description/script.js";
+import { createEarthPreview } from "./cmp/canvas/script.js";
+import { earth, sun } from "./cmp/planet-selection/earth.js";
 
 import.meta.glob(
     [
@@ -48,35 +52,36 @@ const library = new ExoplanetLibrary({
 let starfield;
 let starModel;
 let orbitView;
+let descriptionClient;
+let aiDescription;
+let earthPreview;
 
 $(document).ready(() => {
     $(".loader").append('<i class="fa-solid fa-spinner loader-symbol"></i>')
 
     starfield = createStarfield(starfieldOptions);
     starModel = createStarModel(document.getElementById('star-model'));
-    const sun = { id: 'sun-reference', name: 'Солнце', luminosity: 1, system: { starCount: 1 } };
     starModel.setStar(sun);
     orbitView = createOrbitView(document.getElementById('orbit-view'));
     const esiExplanation = createEsiExplanation(document.getElementById('esi-explanation'));
-    esiExplanation.setPlanet({ id: 'earth-reference', name: 'Земля', radius: 1, flux: 1 });
-    // Справочные данные Земли до выбора экзопланеты. Границы Солнца: Kopparapu 2014, табл. 1.
-    orbitView.setPlanet({
-        name: 'Земля',
-        orbit: { semiMajorAxis: 1, eccentricity: 0.0167, period: 365.26 },
-        habitableZone: {
-            conservative: { inner: 0.9504, outer: 1.6760 },
-            optimistic: { inner: 0.7504, outer: 1.7678 },
-        },
-    }, sun);
+    esiExplanation.setPlanet(earth);
+    descriptionClient = createDescriptionClient({
+        baseUrl: 'https://tulahack2026-uno-exoworker.dfilirini.workers.dev',
+    });
+    aiDescription = createAiDescription(document.getElementById('ai-description'), descriptionClient);
+    aiDescription.setPlanet(earth);
+    orbitView.setPlanet(earth, sun);
     const selection = createPlanetSelection(library, {
         comparisonEnabled: false,
         onStarChange: star => starModel.setStar(star),
         onPlanetChange: (planet, star) => {
             orbitView.setPlanet(planet, star);
             esiExplanation.setPlanet(planet);
+            aiDescription.setPlanet(planet);
         },
         onRankingChange: planets => esiExplanation.setRanking(planets),
     });
+    earthPreview = createEarthPreview(document.getElementById('earth-shortcut-canvas'));
     void GetPlanets(library, selection);
 })
 
@@ -85,5 +90,8 @@ if (import.meta.hot) {
         starfield?.dispose();
         starModel?.dispose();
         orbitView?.dispose();
+        aiDescription?.dispose();
+        descriptionClient?.dispose();
+        earthPreview?.dispose();
     });
 }

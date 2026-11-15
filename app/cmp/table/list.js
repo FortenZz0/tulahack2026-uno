@@ -15,8 +15,8 @@ export function PlanetCard(index, planet_name, star_name, esi, id = String(index
     let esi_class
 
     if (!hasEsi) esi_class = "unavailable"
-    else if (esi >= 0.8) esi_class = "good"
-    else if (esi >= 0.5) esi_class = "normal"
+    else if (esi >= 0.9) esi_class = "good"
+    else if (esi >= 0.8) esi_class = "normal"
     else esi_class = "bad"
 
 

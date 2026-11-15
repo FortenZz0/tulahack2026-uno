@@ -67,10 +67,22 @@ section.planet-info
         margin-top: .25rem
 
     .planet-star
-        display: block
+        display: table
         margin-top: .5rem
         font-size: .85rem
         letter-spacing: .04em
+        color: var(--color-accent-1)
+        pointer-events: auto
+        text-decoration: underline
+        text-underline-offset: .2em
+
+        i
+            color: inherit
+
+        &:focus-visible
+            outline: 2px solid var(--color-accent-1)
+            outline-offset: 4px
+            border-radius: 2px
 
     .comparison-caption
         position: absolute

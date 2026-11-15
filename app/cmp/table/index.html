@@ -1,10 +1,15 @@
-<span class="d-block m-0 mb-2 accent">
-    Рейтинг землеподобия ESI
-</span>
-
-<h1 class="m-0 mb-4" id="planet-list-title">
-    Топ 50 планет
-</h1>
+<div class="planet-list-heading mb-4">
+    <div class="planet-list-titles">
+        <span class="d-block m-0 mb-2 accent">Рейтинг землеподобия ESI</span>
+        <h1 class="m-0" id="planet-list-title">Топ 50 планет</h1>
+    </div>
+    <div class="earth-shortcut">
+        <span id="earth-shortcut-label">к Земле</span>
+        <button type="button" id="earth-shortcut" aria-labelledby="earth-shortcut-label" title="Открыть Землю">
+            <canvas id="earth-shortcut-canvas" aria-hidden="true"></canvas>
+        </button>
+    </div>
+</div>
 
 <!-- <label class="search-field w-100 mb-3" for="search">
     <input type="text" name="search" id="search" class="fs-4">

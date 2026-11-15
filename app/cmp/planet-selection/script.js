@@ -1,7 +1,8 @@
 import { setScenePlanets } from '../canvas/script.js';
 import { createComparisonState, getPlanetRadius } from '../canvas/comparison.js';
+import { createRelatedPlanetLinks } from './related-planets.js';
+import { earth, sun } from './earth.js';
 
-const earth = { id: 'earth-reference', name: 'Земля', radius: 1 };
 const text = (value, fallback = 'Нет данных') => typeof value === 'string' && value.trim() ? value.trim() : fallback;
 const format = (value, unit = '', digits = 2) => Number.isFinite(value)
     ? `${value.toLocaleString('ru-RU', { maximumFractionDigits: digits })}${unit ? ` ${unit}` : ''}` : 'Нет данных';
@@ -17,15 +18,30 @@ export function createPlanetSelection(library, {
     toggle.hidden = !comparisonEnabled;
     toggle.closest('.planet-info').classList.toggle('comparison-enabled', comparisonEnabled);
     let listedPlanets = new Map();
+    const relatedPlanets = createRelatedPlanetLinks(document.getElementById('related-planets'), library, planet => {
+        state.cancel();
+        selectPlanet(planet);
+        const heading = document.getElementById('vizual-planet-name');
+        heading.setAttribute('tabindex', '-1');
+        heading.focus({ preventScroll: true });
+    });
 
     function fillValues(sectionId, rows) {
         const list = details.querySelector(`#${sectionId}`).parentElement.querySelector('dl');
-        list.replaceChildren(...rows.map(([label, value]) => {
+        list.replaceChildren(...rows.map(([label, value, note]) => {
             const row = document.createElement('div');
             const term = document.createElement('dt');
             const definition = document.createElement('dd');
             term.textContent = label;
             definition.textContent = value;
+            if (note) {
+                const marker = document.createElement('sup');
+                marker.className = 'parameter-footnote-mark';
+                marker.textContent = note.marker;
+                marker.setAttribute('aria-hidden', 'true');
+                term.append(marker);
+                definition.setAttribute('aria-describedby', note.id);
+            }
             if (value === 'Нет данных') definition.className = 'unavailable';
             row.append(term, definition);
             return row;
@@ -49,24 +65,40 @@ export function createPlanetSelection(library, {
         summary.querySelectorAll('dd').forEach((item, i) => { item.textContent = values[i]; });
         summary.querySelectorAll('dt')[3].textContent = 'Большая полуось';
         details.setAttribute('aria-label', `Характеристики и описание: ${text(planet.name, 'планета')}`);
-        details.querySelector(':scope > .scientific-note').textContent =
-            `${text(planet.name, 'Планета')} · данные NASA Exoplanet Archive`;
 
-        const physical = (field, unit, digits = 2) => {
-            const value = format(planet[field], unit, digits);
-            return value !== 'Нет данных' && planet.measurements?.[field]?.lim
-                ? `${value} (предел измерения)` : value;
+        const physicsNotes = [];
+        const physical = (label, field, unit) => {
+            const messages = [];
+            if (Number.isFinite(planet[field])) {
+                if (field === 'mass' && planet.flags?.massIsEstimated) messages.push('Модельная оценка.');
+                if (field === 'mass' && planet.flags?.massIsMinimum) messages.push('Указана минимальная масса.');
+                if (field === 'eqt') messages.push(planet.id === earth.id
+                    ? 'Оценка при альбедо 0,3 и равномерном перераспределении тепла, без парникового эффекта.'
+                    : 'Равновесная температура не является температурой поверхности.');
+                if (planet.measurements?.[field]?.lim) messages.push('Значение является пределом измерения.');
+            }
+            let note;
+            if (messages.length) {
+                note = { id: `physics-note-${physicsNotes.length + 1}`, marker: '*'.repeat(physicsNotes.length + 1),
+                    label, text: messages.join(' ') };
+                physicsNotes.push(note);
+            }
+            return [label, format(planet[field], unit), note];
         };
         fillValues('physics-title', [
-            ['Масса', physical('mass', 'M⊕')], ['Радиус', physical('radius', 'R⊕')],
-            ['Средняя плотность', physical('density', 'г/см³')], ['Гравитация', physical('gravity', 'м/с²')],
-            ['Скорость убегания', physical('vesc', 'км/с')], ['Равновесная температура', physical('eqt', 'K')],
-            ['Поток излучения', physical('flux', 'S⊕')],
+            physical('Масса', 'mass', 'M⊕'), physical('Радиус', 'radius', 'R⊕'),
+            physical('Средняя плотность', 'density', 'г/см³'), physical('Гравитация', 'gravity', 'м/с²'),
+            physical('Скорость убегания', 'vesc', 'км/с'), physical('Равновесная температура', 'eqt', 'K'),
+            physical('Поток излучения', 'flux', 'S⊕'),
         ]);
-        document.getElementById('physics-title').parentElement.querySelector('.scientific-note').textContent =
-            'Равновесная температура не является температурой поверхности.'
-            + (planet.flags?.massIsEstimated ? ' Масса — модельная оценка.' : '')
-            + (planet.flags?.massIsMinimum ? ' Указана минимальная масса.' : '');
+        const notes = document.getElementById('physics-notes');
+        notes.replaceChildren(...physicsNotes.map(note => {
+            const paragraph = document.createElement('p');
+            paragraph.id = note.id;
+            paragraph.textContent = `${note.marker} ${note.label} — ${note.text}`;
+            return paragraph;
+        }));
+        notes.hidden = physicsNotes.length === 0;
         fillValues('orbit-title', [
             ['Орбитальный период', format(planet.orbit?.period, 'дня')],
             ['Большая полуось', format(planet.orbit?.semiMajorAxis, 'а.е.', 3)],
@@ -83,16 +115,27 @@ export function createPlanetSelection(library, {
             ['Светимость', format(star?.luminosity, 'L☉')], ['Возраст', format(star?.age, 'млрд лет')],
             ['Звёзд в системе', format(star?.system?.starCount)],
         ]);
-        const otherNames = star?.planets?.filter(id => id !== planet.id)
-            .map(id => library.getPlanet(id)?.name).filter(name => typeof name === 'string' && name.trim()) ?? [];
-        document.getElementById('star-title').parentElement.querySelector('.scientific-note').textContent =
-            otherNames.length ? `Другие планеты: ${otherNames.join(', ')}.` : 'Другие планеты: нет данных в загруженном каталоге.';
+        relatedPlanets.setPlanet(planet, star);
         details.closest('.scrollbox').scrollTop = 0;
     }
 
     function formatFraction(value) {
         return Number.isFinite(value) && value >= 0 && value <= 1 ? format(value * 100, '%', 1) : 'Нет данных';
     }
+
+    function selectPlanet(planet) {
+        if (!state.choose(planet)) return;
+        if (!state.active) renderDetails(planet, planet.id === earth.id ? sun : library.getPlanetStar(planet));
+        render();
+    }
+
+    document.getElementById('earth-shortcut')?.addEventListener('click', () => {
+        state.cancel();
+        selectPlanet(earth);
+        const heading = document.getElementById('vizual-planet-name');
+        heading.setAttribute('tabindex', '-1');
+        heading.focus({ preventScroll: true });
+    });
 
     function render() {
         const { selected, comparison } = state;
@@ -156,10 +199,6 @@ export function createPlanetSelection(library, {
             onRankingChange(planets);
             render();
         },
-        onSelect(planet) {
-            if (!state.choose(planet)) return;
-            if (!state.active) renderDetails(planet, library.getPlanetStar(planet));
-            render();
-        },
+        onSelect: selectPlanet,
     };
 }

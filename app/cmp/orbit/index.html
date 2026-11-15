@@ -33,17 +33,19 @@
             <text x="174" y="134" text-anchor="middle">½ оборота</text>
             <text x="308" y="134" text-anchor="end">1 оборот</text>
         </svg>
-        <p class="scientific-note">Модель потока: S/S⊕ = (L/L☉) / r², r в а.е. Вертикальная шкала подстраивается под диапазон значений.</p>
+        <p class="scientific-note mb-0">График показывает, как меняется поток энергии от звезды при движении планеты по орбите.</p>
     </div>
-    <p class="scientific-note" data-orbit-explanation></p>
-    <p class="scientific-note mb-0">Размеры маркеров звезды и планеты условные. Обитаемые зоны — модельные границы, а не подтверждение наличия жизни.</p>
     <div class="orbit-time-controls" data-orbit-time-controls hidden>
         <div class="orbit-controls">
-            <button type="button" data-orbit-play aria-pressed="false" disabled>Воспроизвести</button>
-            <output for="orbit-time" data-orbit-day></output>
+            <button type="button" data-orbit-play aria-pressed="false" aria-label="Воспроизвести" title="Воспроизвести" disabled>
+                <svg class="orbit-icon-play" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                <svg class="orbit-icon-pause" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            </button>
+            <input class="orbit-time" id="orbit-time" type="range" aria-label="Время движения по орбите" min="0" max="10000" step="1" value="0" disabled>
+            <div class="orbit-clock">
+                <output for="orbit-time" data-orbit-day></output>
+                <span data-orbit-period>1 оборот</span>
+            </div>
         </div>
-        <label class="orbit-time-label" for="orbit-time">Время от перицентра · условное начало отсчёта</label>
-        <input class="orbit-time" id="orbit-time" type="range" min="0" max="10000" step="1" value="0" disabled>
-        <div class="orbit-time-ticks"><span>0</span><span data-orbit-period>1 оборот</span></div>
     </div>
 </div>

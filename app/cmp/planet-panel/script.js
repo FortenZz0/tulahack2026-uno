@@ -16,6 +16,21 @@ if (workspace && toggle && details) {
     toggle.addEventListener("click", () => {
         setExpanded(toggle.getAttribute("aria-expanded") !== "true");
     });
+
+    document.getElementById('vizual-sun-name')?.addEventListener('click', event => {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        const starTitle = document.getElementById('star-title');
+        const scroll = document.getElementById('planet-panel-scroll');
+        if (!starTitle || !scroll) return;
+        event.preventDefault();
+        setExpanded(true);
+        starTitle.focus({ preventScroll: true });
+        scroll.scrollTo({
+            top: scroll.scrollTop + starTitle.closest('section').getBoundingClientRect().top - scroll.getBoundingClientRect().top,
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+        });
+    });
+
     workspace.addEventListener("keydown", event => {
         if (event.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
             setExpanded(false);

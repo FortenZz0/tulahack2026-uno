@@ -153,9 +153,10 @@ main
         display: grid
         grid-template-columns: repeat(4, minmax(0, 1fr))
         gap: .75rem
+        text-align: center
 
         dt
-            color: var(--color-text-2)
+            color: var(--color-text-1)
             font-size: .75rem
             font-weight: 400
             overflow-wrap: anywhere
@@ -172,6 +173,17 @@ main
                 font-size: .8rem
                 letter-spacing: normal
 
+@media (min-width: 992px)
+    .planet-workspace .scientific-data .scientific-scroll
+        padding-inline: .75rem
+        scrollbar-gutter: stable both-edges
+
+    .planet-workspace:not(.details-expanded) .planet-summary
+        display: grid
+        align-content: center
+        min-height: 100%
+        padding: .5rem 0
+
 @media (prefers-reduced-motion: reduce)
     .planet-workspace > .planet-panel, .planet-panel-toggle svg
         transition: none
@@ -185,8 +197,9 @@ main
 
     .scientific-title
         flex-shrink: 0
-        font-size: 1.25rem
-        font-weight: 600
+        font-size: 1.5rem
+        font-weight: 700
+        text-align: center
 
     .scientific-scroll
         padding-right: .75rem
@@ -205,9 +218,14 @@ main
 
     h3
         color: var(--color-accent-1)
-        font-size: .95rem
-        font-weight: 500
+        font-size: 1.2rem
+        font-weight: 700
+        text-align: center
         margin-bottom: .75rem
+
+        &.star-model-name
+            text-align: center
+            font-weight: 700
 
     .scientific-values
         margin-bottom: .75rem
@@ -221,7 +239,7 @@ main
             border-bottom: 1px solid var(--color-block-border)
 
         dt
-            color: var(--color-text-2)
+            color: var(--color-text-1)
             font-size: .8rem
             font-weight: 400
             overflow-wrap: anywhere
@@ -246,6 +264,9 @@ main
         color: var(--color-text-2)
         font-size: .75rem
         line-height: 1.6
+
+        :where(p, span, strong, em)
+            color: inherit
 
 .loader
     position: relative

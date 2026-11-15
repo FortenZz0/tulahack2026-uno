@@ -1,0 +1,52 @@
+.planet-ai-description
+    [hidden]
+        display: none !important
+
+    .ai-description-body
+        font-size: .85rem
+        line-height: 1.75
+        overflow-wrap: anywhere
+
+        h4
+            color: var(--color-accent-1)
+            font-size: 1rem
+            font-weight: 700
+            text-align: center
+            margin: 1.25rem 0 .5rem
+
+            &:first-child
+                margin-top: 0
+
+        p
+            margin-bottom: .85rem
+            white-space: pre-line
+
+        ul, ol
+            padding-left: 1.25rem
+
+        li + li
+            margin-top: .35rem
+
+        a
+            color: var(--color-accent-1)
+
+        code
+            color: var(--color-text-1)
+            background: var(--color-block-background-2)
+            padding: .1rem .3rem
+            border-radius: 4px
+
+        > :last-child
+            margin-bottom: 0
+
+    .ai-description-retry
+        padding: .5rem .85rem
+        border: 1px solid var(--color-block-border)
+        border-radius: 8px
+        background: var(--color-block-background-2)
+        color: var(--color-accent-1)
+        font-size: .8rem
+
+        &:focus-visible
+            outline: 2px solid var(--color-accent-1)
+            outline-offset: 3px

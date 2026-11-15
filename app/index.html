@@ -43,9 +43,9 @@
                     </div>
 
                     <p class="planet-class mb-0">Планета земного типа</p>
-                    <span class="planet-star accent" id="vizual-sun-name">
+                    <a class="planet-star accent" id="vizual-sun-name" href="#star-section">
                         <i class="fa-solid fa-star" aria-hidden="true"></i> Солнце
-                    </span>
+                    </a>
                 </div>
 
                 <button type="button" class="comparison-toggle" id="comparison-toggle" aria-pressed="false" hidden>
@@ -89,7 +89,6 @@
 
                     <div class="scientific-details" id="planet-details" role="region" aria-label="Характеристики и описание Земли" hidden>
                         <h2 class="scientific-title mb-3" id="scientific-data-title">Характеристики</h2>
-                        <p class="scientific-note">Земля и Солнце · справочные значения округлены</p>
 
                         {% include "./app/cmp/esi-explanation/index.html" %}
 
@@ -101,10 +100,12 @@
                                 <div><dt>Средняя плотность</dt><dd>5,51 <span>г/см³</span></dd></div>
                                 <div><dt>Гравитация у поверхности</dt><dd>9,81 <span>м/с²</span></dd></div>
                                 <div><dt>Скорость убегания</dt><dd>11,19 <span>км/с</span></dd></div>
-                                <div><dt>Равновесная температура</dt><dd>≈ 255 <span>K</span></dd></div>
+                                <div><dt>Равновесная температура<sup class="parameter-footnote-mark" aria-hidden="true">*</sup></dt><dd aria-describedby="physics-note-1">≈ 255 <span>K</span></dd></div>
                                 <div><dt>Поток излучения</dt><dd>1 <span>S⊕</span></dd></div>
                             </dl>
-                            <p class="scientific-note">Равновесная температура — оценка при альбедо 0,3 и равномерном перераспределении тепла, без парникового эффекта. Это не температура поверхности.</p>
+                            <div class="scientific-note parameter-footnotes" id="physics-notes">
+                                <p id="physics-note-1">* Равновесная температура — оценка при альбедо 0,3 и равномерном перераспределении тепла, без парникового эффекта.</p>
+                            </div>
                         </section>
 
                         <section aria-labelledby="orbit-title">
@@ -117,9 +118,9 @@
                             {% include "./app/cmp/orbit/index.html" %}
                         </section>
 
-                        <section aria-labelledby="star-title">
-                            <h3 id="star-title">Солнце</h3>
+                        <section id="star-section" aria-labelledby="star-title">
                             {% include "./app/cmp/star-model/index.html" %}
+                            <h3 class="star-model-name" id="star-title" tabindex="-1">Солнце</h3>
                             <dl class="scientific-values">
                                 <div><dt>Спектральный класс</dt><dd>G2V</dd></div>
                                 <div><dt>Эффективная температура</dt><dd>5 772 <span>K</span></dd></div>
@@ -129,13 +130,10 @@
                                 <div><dt>Возраст</dt><dd>≈ 4,6 <span>млрд лет</span></dd></div>
                                 <div><dt>Звёзд в системе</dt><dd>1</dd></div>
                             </dl>
-                            <p class="scientific-note mb-0">Другие планеты: Меркурий, Венера, Марс, Юпитер, Сатурн, Уран, Нептун.</p>
+                            <p class="scientific-note mb-0" id="related-planets">Другие планеты: Меркурий, Венера, Марс, Юпитер, Сатурн, Уран, Нептун.</p>
                         </section>
 
-                        <section class="planet-ai-description" aria-labelledby="ai-description-title">
-                            <h3 id="ai-description-title">ИИ-описание</h3>
-                            <p class="scientific-note mb-0">Описание ещё не подготовлено.</p>
-                        </section>
+                        {% include "./app/cmp/ai-description/index.html" %}
                     </div>
                 </div>
             </section>

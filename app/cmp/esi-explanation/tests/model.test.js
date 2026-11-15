@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getEsiExplanation } from '../model.js';
+import { earth } from '../../planet-selection/earth.js';
 
 test('Компоненты соответствуют отклонениям Worker, итог берётся без пересчёта', () => {
     const planet = { id: 'a', radius: 2, flux: 0.5, esi: { simple: 0.12345 } };
@@ -18,6 +19,15 @@ test('Земные параметры дают единичные шкалы, н
     assert.equal(result.fluxSimilarity, 1);
     assert.equal(result.esi, null);
     assert.equal(result.rankText, 'Земля — эталон');
+});
+
+test('Справочная Земля имеет ESI 1 и не получает место экзопланеты в рейтинге', () => {
+    const result = getEsiExplanation(earth, [{ id: 'exoplanet' }]);
+    assert.equal(result.esi, 1);
+    assert.equal(result.radiusSimilarity, 1);
+    assert.equal(result.fluxSimilarity, 1);
+    assert.equal(result.rankText, 'Земля — эталон');
+    assert.doesNotMatch(result.explanation, /недостаточно данных/);
 });
 
 test('Пропуски, строки, бесконечности и пределы измерений не превращаются в ноль', () => {
